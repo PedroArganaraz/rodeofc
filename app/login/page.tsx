@@ -12,7 +12,7 @@ export default async function LoginPage({
     <div className="flex flex-1 items-center justify-center p-6">
       <form
         action={login}
-        className="w-full max-w-sm space-y-4 rounded-xl border border-stone-300 bg-stone-100 p-6"
+        className="w-full max-w-sm space-y-4 p-6"
       >
         <div className="flex flex-col items-center gap-3 pb-2 text-center">
           <Image
@@ -27,8 +27,10 @@ export default async function LoginPage({
             Rodeo FC
           </h1>
         </div>
-        <p className="text-sm font-medium text-neutral-500">
-          Iniciá sesión para gestionar el equipo.
+        <p className="flex justify-center">
+          <span className="rounded-full bg-blue-500/10 px-3 py-1 text-sm font-medium text-brand-navy">
+            Cuerpo Técnico
+          </span>
         </p>
 
         {error ? (

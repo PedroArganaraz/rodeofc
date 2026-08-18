@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { login } from "./actions";
 
 export default async function LoginPage({
@@ -11,21 +12,36 @@ export default async function LoginPage({
     <div className="flex flex-1 items-center justify-center p-6">
       <form
         action={login}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-black/10 p-6 dark:border-white/10"
+        className="w-full max-w-sm space-y-4 rounded-xl border border-stone-300 bg-stone-100 p-6"
       >
-        <h1 className="text-xl font-semibold">RodeoFC</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <div className="flex flex-col items-center gap-3 pb-2 text-center">
+          <Image
+            src="/logo.png"
+            alt="Rodeo Football Club"
+            width={505}
+            height={469}
+            priority
+            className="h-20 w-auto"
+          />
+          <h1 className="text-2xl font-semibold text-neutral-900">
+            Rodeo FC
+          </h1>
+        </div>
+        <p className="text-sm font-medium text-neutral-500">
           Iniciá sesión para gestionar el equipo.
         </p>
 
         {error ? (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          <p className="rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-500">
             {error}
           </p>
         ) : null}
 
         <div className="space-y-1">
-          <label htmlFor="email" className="text-sm font-medium">
+          <label
+            htmlFor="email"
+            className="text-sm font-medium text-neutral-500"
+          >
             Email
           </label>
           <input
@@ -34,12 +50,15 @@ export default async function LoginPage({
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-transparent"
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-neutral-900"
           />
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-medium">
+          <label
+            htmlFor="password"
+            className="text-sm font-medium text-neutral-500"
+          >
             Contraseña
           </label>
           <input
@@ -48,13 +67,13 @@ export default async function LoginPage({
             type="password"
             required
             autoComplete="current-password"
-            className="w-full rounded-md border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-transparent"
+            className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-neutral-900"
           />
         </div>
 
         <button
           type="submit"
-          className="w-full rounded-md bg-black px-3 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
+          className="w-full rounded-xl bg-brand-navy px-3 py-2 text-sm font-medium text-white hover:bg-brand-navy-dark"
         >
           Ingresar
         </button>

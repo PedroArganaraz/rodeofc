@@ -1,26 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-brand-navy: #223669;
+  --color-brand-navy-dark: #1b2b54;
+  --color-blue-500: #3d5fa6;
+  --color-field-green: #1f3d2b;
+  --color-stone-100: #e4e4e0;
+  --color-stone-300: #cfd0c6;
+  --color-neutral-900: #1a1e24;
+  --color-amber-500: #d97706;
+  --color-red-500: #dc2626;
+  --color-green-500: #16a34a;
+
+  --background: var(--color-stone-100);
+  --foreground: var(--color-neutral-900);
 }
 
 @theme inline {
+  --color-brand-navy: var(--color-brand-navy);
+  --color-brand-navy-dark: var(--color-brand-navy-dark);
+  --color-blue-500: var(--color-blue-500);
+  --color-field-green: var(--color-field-green);
+  --color-stone-100: var(--color-stone-100);
+  --color-stone-300: var(--color-stone-300);
+  --color-neutral-900: var(--color-neutral-900);
+  --color-amber-500: var(--color-amber-500);
+  --color-red-500: var(--color-red-500);
+  --color-green-500: var(--color-green-500);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }

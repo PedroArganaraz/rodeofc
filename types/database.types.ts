@@ -229,27 +229,27 @@ export interface Database {
           id: string;
           equipo_id: string;
           nombre: string;
+          apellido: string;
           dorsal: number | null;
           posicion: string | null;
-          minutos_jugados: number;
           created_at: string;
         };
         Insert: {
           id?: string;
           equipo_id: string;
           nombre: string;
+          apellido: string;
           dorsal?: number | null;
           posicion?: string | null;
-          minutos_jugados?: number;
           created_at?: string;
         };
         Update: {
           id?: string;
           equipo_id?: string;
           nombre?: string;
+          apellido?: string;
           dorsal?: number | null;
           posicion?: string | null;
-          minutos_jugados?: number;
           created_at?: string;
         };
         Relationships: [

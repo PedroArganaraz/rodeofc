@@ -2,21 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Shield, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/confirm-modal";
-import { JugadoraFormModal } from "./jugadora-form-modal";
-import { deleteJugadora } from "./actions";
+import { RivalFormModal } from "./rival-form-modal";
+import { deleteRival } from "./actions";
 import type { Tables } from "@/types/database.types";
 
-type Jugadora = Tables<"jugadoras">;
+type Rival = Tables<"rivales">;
 
 type ModalState =
   | { type: "create" }
-  | { type: "edit"; jugadora: Jugadora }
-  | { type: "delete"; jugadora: Jugadora }
+  | { type: "edit"; rival: Rival }
+  | { type: "delete"; rival: Rival }
   | null;
 
-export function JugadorasList({ jugadoras }: { jugadoras: Jugadora[] }) {
+export function RivalesList({
+  rivales,
+  equipoId,
+}: {
+  rivales: Rival[];
+  equipoId: string;
+}) {
   const [modal, setModal] = useState<ModalState>(null);
   const router = useRouter();
 
@@ -26,7 +32,7 @@ export function JugadorasList({ jugadoras }: { jugadoras: Jugadora[] }) {
   }
 
   async function handleDelete(id: string) {
-    await deleteJugadora(id);
+    await deleteRival(id);
     setModal(null);
     router.refresh();
   }
@@ -40,53 +46,60 @@ export function JugadorasList({ jugadoras }: { jugadoras: Jugadora[] }) {
           className="flex items-center gap-2 rounded-xl bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy-dark"
         >
           <Plus className="h-4 w-4" />
-          Nueva jugadora
+          Nuevo Rival
         </button>
       </div>
 
-      {jugadoras.length === 0 ? (
+      {rivales.length === 0 ? (
         <p className="py-12 text-center text-sm text-neutral-500">
-          Todavía no hay jugadoras cargadas.
+          Todavía no hay rivales cargados.
         </p>
       ) : (
         <ul className="space-y-2">
-          {jugadoras.map((jugadora) => (
+          {rivales.map((rival) => (
             <li
-              key={jugadora.id}
+              key={rival.id}
               className="flex items-center justify-between gap-4 rounded-xl border border-stone-300 bg-white px-4 py-3"
             >
               <button
                 type="button"
-                onClick={() => setModal({ type: "edit", jugadora })}
+                onClick={() => setModal({ type: "edit", rival })}
                 className="flex flex-1 items-center gap-3 text-left"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-navy font-mono text-sm font-medium text-white">
-                  {jugadora.dorsal ?? "-"}
-                </span>
-                <span>
-                  <span className="block font-medium text-neutral-900">
-                    {jugadora.apellido}, {jugadora.nombre}
+                {rival.escudo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={rival.escudo_url}
+                    alt=""
+                    className="h-8 w-8 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-300 text-neutral-500">
+                    <Shield className="h-4 w-4" />
                   </span>
-                  {jugadora.posicion ? (
-                    <span className="block text-sm text-neutral-500">
-                      {jugadora.posicion}
-                    </span>
-                  ) : null}
+                )}
+                <span className="flex items-center gap-2">
+                  <span className="font-medium text-neutral-900">
+                    {rival.nombre}
+                  </span>
+                  <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-brand-navy">
+                    {rival.categoria}
+                  </span>
                 </span>
               </button>
               <div className="flex shrink-0 gap-1">
                 <button
                   type="button"
-                  onClick={() => setModal({ type: "edit", jugadora })}
-                  aria-label={`Editar a ${jugadora.nombre} ${jugadora.apellido}`}
+                  onClick={() => setModal({ type: "edit", rival })}
+                  aria-label={`Editar a ${rival.nombre}`}
                   className="rounded-full p-2 text-neutral-500 hover:bg-stone-300 hover:text-neutral-900"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
-                  onClick={() => setModal({ type: "delete", jugadora })}
-                  aria-label={`Eliminar a ${jugadora.nombre} ${jugadora.apellido}`}
+                  onClick={() => setModal({ type: "delete", rival })}
+                  aria-label={`Eliminar a ${rival.nombre}`}
                   className="rounded-full p-2 text-neutral-500 hover:bg-red-500/10 hover:text-red-500"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -98,20 +111,25 @@ export function JugadorasList({ jugadoras }: { jugadoras: Jugadora[] }) {
       )}
 
       {modal?.type === "create" ? (
-        <JugadoraFormModal onClose={() => setModal(null)} onSaved={handleSaved} />
+        <RivalFormModal
+          equipoId={equipoId}
+          onClose={() => setModal(null)}
+          onSaved={handleSaved}
+        />
       ) : null}
       {modal?.type === "edit" ? (
-        <JugadoraFormModal
-          jugadora={modal.jugadora}
+        <RivalFormModal
+          equipoId={equipoId}
+          rival={modal.rival}
           onClose={() => setModal(null)}
           onSaved={handleSaved}
         />
       ) : null}
       {modal?.type === "delete" ? (
         <ConfirmModal
-          title="Eliminar jugadora"
-          description={`¿Eliminar a ${modal.jugadora.nombre} ${modal.jugadora.apellido}? Esta acción no se puede deshacer.`}
-          onConfirm={() => handleDelete(modal.jugadora.id)}
+          title="Eliminar rival"
+          description={`¿Eliminar a ${modal.rival.nombre}? Esta acción no se puede deshacer.`}
+          onConfirm={() => handleDelete(modal.rival.id)}
           onClose={() => setModal(null)}
         />
       ) : null}

@@ -78,13 +78,11 @@ export function RivalesList({
                     <Shield className="h-4 w-4" />
                   </span>
                 )}
-                <span className="flex items-center gap-2">
-                  <span className="font-medium text-neutral-900">
-                    {rival.nombre}
-                  </span>
-                  <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-brand-navy">
-                    {rival.categoria}
-                  </span>
+                <span className="min-w-0 flex-1 font-medium text-neutral-900">
+                  {rival.nombre}
+                </span>
+                <span className="shrink-0 whitespace-nowrap rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-brand-navy">
+                  {rival.categoria.trim().split(" ").pop()}
                 </span>
               </button>
               <div className="flex shrink-0 gap-1">

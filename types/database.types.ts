@@ -357,6 +357,7 @@ export type Database = {
           fecha: string
           hora: string | null
           id: string
+          notas: string | null
           numero_cancha: number | null
           rival_id: string | null
           sede: string | null
@@ -368,6 +369,7 @@ export type Database = {
           fecha: string
           hora?: string | null
           id?: string
+          notas?: string | null
           numero_cancha?: number | null
           rival_id?: string | null
           sede?: string | null
@@ -379,6 +381,7 @@ export type Database = {
           fecha?: string
           hora?: string | null
           id?: string
+          notas?: string | null
           numero_cancha?: number | null
           rival_id?: string | null
           sede?: string | null

@@ -1,0 +1,1 @@
+alter table "partidos" add column notas text;

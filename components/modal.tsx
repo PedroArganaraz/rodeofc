@@ -7,10 +7,12 @@ export function Modal({
   title,
   onClose,
   children,
+  maxWidthClassName = "max-w-md",
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  maxWidthClassName?: string;
 }) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -30,7 +32,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-md rounded-xl bg-stone-100 p-6 shadow-lg"
+        className={`w-full ${maxWidthClassName} rounded-xl bg-stone-100 p-6 shadow-lg`}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id="modal-title" className="text-lg font-semibold text-neutral-900">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Shield, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/confirm-modal";
@@ -61,9 +62,8 @@ export function RivalesList({
               key={rival.id}
               className="flex items-center justify-between gap-4 rounded-xl border border-stone-300 bg-white px-4 py-3"
             >
-              <button
-                type="button"
-                onClick={() => setModal({ type: "edit", rival })}
+              <Link
+                href={`/rivales/${rival.id}`}
                 className="flex flex-1 items-center gap-3 text-left"
               >
                 {rival.escudo_url ? (
@@ -84,7 +84,7 @@ export function RivalesList({
                 <span className="shrink-0 whitespace-nowrap rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-brand-navy">
                   {rival.categoria.trim().split(" ").pop()}
                 </span>
-              </button>
+              </Link>
               <div className="flex shrink-0 gap-1">
                 <button
                   type="button"

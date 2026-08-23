@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
+import { ordenarPorPosicion } from "@/lib/orden-jugadoras";
 import { JugadorasList } from "./jugadoras-list";
 
 export default async function JugadorasPage() {
@@ -26,8 +27,7 @@ export default async function JugadorasPage() {
   const { data: jugadoras } = await supabase
     .from("jugadoras")
     .select("*")
-    .eq("equipo_id", equipoId)
-    .order("apellido");
+    .eq("equipo_id", equipoId);
 
-  return <JugadorasList jugadoras={jugadoras ?? []} />;
+  return <JugadorasList jugadoras={ordenarPorPosicion(jugadoras ?? [])} />;
 }

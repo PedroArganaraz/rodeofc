@@ -210,7 +210,7 @@ export function CalendarioView({
               onClick={() =>
                 setModal({ type: "detalle", partidos: cell.partidos })
               }
-              className={`relative flex min-h-28 flex-col p-2 text-left ${
+              className={`relative flex min-h-16 flex-col p-2 text-left sm:min-h-28 ${
                 !cell.inMonth
                   ? "bg-stone-100"
                   : cell.isToday
@@ -253,10 +253,10 @@ export function CalendarioView({
                           <img
                             src={rival.escudo_url}
                             alt=""
-                            className="h-12 w-12 shrink-0 rounded-full object-cover"
+                            className="h-8 w-8 shrink-0 rounded-full object-cover sm:h-12 sm:w-12"
                           />
                         ) : (
-                          <Shield className="h-12 w-12 shrink-0 text-neutral-400" />
+                          <Shield className="h-8 w-8 shrink-0 text-neutral-400 sm:h-12 sm:w-12" />
                         )}
                       </div>
                     );

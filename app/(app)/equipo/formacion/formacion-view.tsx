@@ -140,34 +140,36 @@ export function FormacionView({
           <h2 className="mb-3 text-sm font-medium text-neutral-500">
             Suplentes
           </h2>
-          {suplentes.length === 0 ? (
-            <p className="text-sm text-neutral-500">No hay suplentes.</p>
-          ) : (
-            <div className="flex flex-wrap justify-center gap-4 lg:flex-col lg:items-start">
-              {suplentes.map((jugadora) => (
-                <button
-                  key={jugadora.id}
-                  type="button"
-                  disabled={!seleccionadoId}
-                  onClick={() => handleClickSuplente(jugadora.id)}
-                  className={`flex flex-col items-center gap-1 rounded-xl p-1 lg:flex-row lg:gap-2 ${
-                    seleccionadoId
-                      ? "cursor-pointer hover:bg-stone-100"
-                      : "cursor-default"
-                  }`}
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white">
-                    {jugadora.dorsal ?? "-"}
-                  </span>
-                  {mostrarNombres ? (
-                    <span className="text-xs font-medium text-neutral-900">
-                      {jugadora.apellido}
+          <div className="rounded-xl border border-stone-300 bg-white p-4">
+            {suplentes.length === 0 ? (
+              <p className="text-sm text-neutral-500">No hay suplentes.</p>
+            ) : (
+              <div className="flex flex-wrap justify-center gap-4 lg:flex-col lg:items-start lg:gap-2">
+                {suplentes.map((jugadora) => (
+                  <button
+                    key={jugadora.id}
+                    type="button"
+                    disabled={!seleccionadoId}
+                    onClick={() => handleClickSuplente(jugadora.id)}
+                    className={`flex flex-col items-center gap-1 rounded-xl p-1 lg:flex-row lg:gap-2 ${
+                      seleccionadoId
+                        ? "cursor-pointer hover:bg-stone-100"
+                        : "cursor-default"
+                    }`}
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white">
+                      {jugadora.dorsal ?? "-"}
                     </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          )}
+                    {mostrarNombres ? (
+                      <span className="text-xs font-medium text-neutral-900">
+                        {jugadora.apellido}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

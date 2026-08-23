@@ -161,7 +161,7 @@ export function CanchaTactica({
     <svg
       ref={svgRef}
       viewBox={`0 0 ${width} ${height}`}
-      className={`w-full touch-none select-none rounded-xl bg-field-green ${
+      className={`w-full select-none rounded-xl bg-field-green ${
         orientacion === "vertical" ? "aspect-[60/100]" : "aspect-[100/60]"
       }`}
       onPointerMove={handlePointerMove}
@@ -186,7 +186,7 @@ export function CanchaTactica({
             transform={`translate(${cx}, ${cy})`}
             onPointerDown={(event) => handlePointerDown(event, marcador.id)}
             onClick={() => onClickMarcador?.(marcador.id)}
-            className={editable ? "cursor-grab" : undefined}
+            className={editable ? "touch-none cursor-grab" : undefined}
           >
             {seleccionadoId === marcador.id ? (
               <circle

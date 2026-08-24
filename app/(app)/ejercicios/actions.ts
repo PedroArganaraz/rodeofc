@@ -29,6 +29,19 @@ async function getEquipoIdDelUsuario() {
   return miembros[0].equipo_id;
 }
 
+function armarPasosPayload(ejercicioId: string, pasos: PasoInput[]) {
+  const payload: TablesInsert<"pasos-ejercicio">[] = pasos.map(
+    (paso, indice) => ({
+      ejercicio_id: ejercicioId,
+      orden: indice + 1,
+      nombre: paso.nombre,
+      posiciones: paso.marcadores as unknown as Json,
+    }),
+  );
+
+  return payload;
+}
+
 export async function crearEjercicio(
   titulo: string,
   categoria: string,
@@ -51,20 +64,50 @@ export async function crearEjercicio(
 
   if (ejercicioError) throw new Error(ejercicioError.message);
 
-  const pasosPayload: TablesInsert<"pasos-ejercicio">[] = pasos.map(
-    (paso, indice) => ({
-      ejercicio_id: ejercicio.id,
-      orden: indice + 1,
-      nombre: paso.nombre,
-      posiciones: paso.marcadores as unknown as Json,
-    }),
-  );
-
   const { error: pasosError } = await supabase
     .from("pasos-ejercicio")
-    .insert(pasosPayload);
+    .insert(armarPasosPayload(ejercicio.id, pasos));
 
   if (pasosError) throw new Error(pasosError.message);
 
   return ejercicio.id;
+}
+
+export async function actualizarEjercicio(
+  ejercicioId: string,
+  titulo: string,
+  pasos: PasoInput[],
+) {
+  const supabase = await createClient();
+
+  const { error: updateError } = await supabase
+    .from("ejercicios")
+    .update({ titulo })
+    .eq("id", ejercicioId);
+
+  if (updateError) throw new Error(updateError.message);
+
+  const { error: deleteError } = await supabase
+    .from("pasos-ejercicio")
+    .delete()
+    .eq("ejercicio_id", ejercicioId);
+
+  if (deleteError) throw new Error(deleteError.message);
+
+  const { error: pasosError } = await supabase
+    .from("pasos-ejercicio")
+    .insert(armarPasosPayload(ejercicioId, pasos));
+
+  if (pasosError) throw new Error(pasosError.message);
+}
+
+export async function eliminarEjercicio(ejercicioId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("ejercicios")
+    .delete()
+    .eq("id", ejercicioId);
+
+  if (error) throw new Error(error.message);
 }

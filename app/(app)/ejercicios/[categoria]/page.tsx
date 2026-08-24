@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Placeholder } from "@/components/placeholder";
+import { createClient } from "@/utils/supabase/server";
 import { CATEGORIAS, type CategoriaEjercicio } from "../categorias";
 
 export default async function EjerciciosCategoriaPage({
@@ -17,6 +17,28 @@ export default async function EjerciciosCategoriaPage({
 
   if (!encontrada) notFound();
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: miembros } = await supabase
+    .from("miembros-equipo")
+    .select("equipo_id")
+    .eq("user_id", user!.id)
+    .limit(1);
+
+  const equipoId = miembros?.[0]?.equipo_id;
+
+  const { data: ejercicios } = equipoId
+    ? await supabase
+        .from("ejercicios")
+        .select('id, titulo, "pasos-ejercicio"(count)')
+        .eq("equipo_id", equipoId)
+        .eq("categoria", encontrada.slug)
+        .order("created_at", { ascending: false })
+    : { data: null };
+
   return (
     <div className="flex w-full flex-1 flex-col">
       <div className="flex justify-end p-6 pb-0">
@@ -28,7 +50,33 @@ export default async function EjerciciosCategoriaPage({
           Nuevo ejercicio
         </Link>
       </div>
-      <Placeholder title={encontrada.label} />
+
+      {!ejercicios || ejercicios.length === 0 ? (
+        <p className="p-6 text-center text-sm text-neutral-500">
+          Todavía no hay ejercicios de {encontrada.label.toLowerCase()}.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-5">
+          {ejercicios.map((ejercicio) => {
+            const cantidadPasos = ejercicio["pasos-ejercicio"]?.[0]?.count ?? 0;
+
+            return (
+              <Link
+                key={ejercicio.id}
+                href={`/ejercicios/${encontrada.slug}/${ejercicio.id}`}
+                className="rounded-xl border border-stone-300 bg-white p-4 shadow-sm transition-colors hover:border-blue-500"
+              >
+                <p className="font-medium text-neutral-900">
+                  {ejercicio.titulo}
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  {cantidadPasos} {cantidadPasos === 1 ? "paso" : "pasos"}
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

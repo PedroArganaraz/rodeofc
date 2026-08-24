@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { CATEGORIAS, type CategoriaEjercicio } from "../../categorias";
-import { NuevoEjercicioView } from "./nuevo-ejercicio-view";
+import { EditorEjercicioView } from "@/components/ejercicios/editor-ejercicio-view";
 
 export default async function NuevoEjercicioPage({
   params,
@@ -16,7 +16,7 @@ export default async function NuevoEjercicioPage({
   if (!encontrada) redirect("/ejercicios");
 
   return (
-    <NuevoEjercicioView
+    <EditorEjercicioView
       categoriaSlug={encontrada.slug}
       categoriaLabel={encontrada.label}
     />

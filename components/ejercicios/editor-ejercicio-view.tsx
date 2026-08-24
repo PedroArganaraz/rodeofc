@@ -4,8 +4,13 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { EditorTactico } from "@/components/cancha/editor-tactico";
+import { ConfirmModal } from "@/components/confirm-modal";
 import type { Marcador } from "@/components/cancha/cancha-tactica";
-import { crearEjercicio } from "./actions";
+import {
+  crearEjercicio,
+  actualizarEjercicio,
+  eliminarEjercicio,
+} from "@/app/(app)/ejercicios/actions";
 
 type Paso = {
   id: string;
@@ -19,40 +24,37 @@ function crearId() {
     : Math.random().toString(36).slice(2);
 }
 
-export function NuevoEjercicioView({
+export function EditorEjercicioView({
   categoriaSlug,
   categoriaLabel,
+  ejercicioId,
+  tituloInicial,
+  pasosIniciales,
 }: {
   categoriaSlug: string;
   categoriaLabel: string;
+  ejercicioId?: string;
+  tituloInicial?: string;
+  pasosIniciales?: Paso[];
 }) {
   const router = useRouter();
-  const [titulo, setTitulo] = useState("");
-  const [marcadores, setMarcadores] = useState<Marcador[]>([]);
-  const [pasos, setPasos] = useState<Paso[]>([]);
-  const [pasoCargadoId, setPasoCargadoId] = useState<string | null>(null);
+  const modoEdicion = Boolean(ejercicioId);
+
+  const [titulo, setTitulo] = useState(tituloInicial ?? "");
+  const [marcadores, setMarcadores] = useState<Marcador[]>(
+    pasosIniciales?.[0]?.marcadores ?? [],
+  );
+  const [pasos, setPasos] = useState<Paso[]>(pasosIniciales ?? []);
+  const [pasoCargadoId, setPasoCargadoId] = useState<string | null>(
+    pasosIniciales?.[0]?.id ?? null,
+  );
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [valorEdicion, setValorEdicion] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [mostrarConfirmEliminar, setMostrarConfirmEliminar] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const puedeGuardar = titulo.trim() !== "" && pasos.length > 0;
-
-  function handleGuardar() {
-    setError(null);
-    startTransition(async () => {
-      try {
-        await crearEjercicio(
-          titulo.trim(),
-          categoriaSlug,
-          pasos.map((paso) => ({ nombre: paso.nombre, marcadores: paso.marcadores })),
-        );
-        router.push(`/ejercicios/${categoriaSlug}`);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Ocurrió un error");
-      }
-    });
-  }
 
   function handleAgregarPaso() {
     setPasos((prev) => [...prev, { id: crearId(), nombre: null, marcadores }]);
@@ -82,25 +84,67 @@ export function NuevoEjercicioView({
     if (id === editandoId) setEditandoId(null);
   }
 
+  function handleGuardar() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const pasosPayload = pasos.map((paso) => ({
+          nombre: paso.nombre,
+          marcadores: paso.marcadores,
+        }));
+
+        if (modoEdicion && ejercicioId) {
+          await actualizarEjercicio(ejercicioId, titulo.trim(), pasosPayload);
+        } else {
+          await crearEjercicio(titulo.trim(), categoriaSlug, pasosPayload);
+        }
+        router.push(`/ejercicios/${categoriaSlug}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Ocurrió un error");
+      }
+    });
+  }
+
+  async function handleEliminar() {
+    if (!ejercicioId) return;
+    await eliminarEjercicio(ejercicioId);
+    router.push(`/ejercicios/${categoriaSlug}`);
+  }
+
   return (
     <div className="w-full flex-1 p-6">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="text"
           required
           placeholder="Título del ejercicio"
           value={titulo}
           onChange={(event) => setTitulo(event.target.value)}
-          className="min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 py-2 text-lg font-semibold text-neutral-900"
+          className="min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2 text-lg font-semibold text-neutral-900 sm:flex-1"
         />
-        <button
-          type="button"
-          onClick={handleGuardar}
-          disabled={!puedeGuardar || isPending}
-          className="rounded-xl bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy-dark disabled:opacity-40"
-        >
-          {isPending ? "Guardando..." : "Guardar"}
-        </button>
+        <div className="flex gap-2 sm:shrink-0">
+          {modoEdicion ? (
+            <button
+              type="button"
+              onClick={() => setMostrarConfirmEliminar(true)}
+              className="flex-1 rounded-xl border border-stone-300 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 sm:flex-none"
+            >
+              Eliminar ejercicio
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleGuardar}
+            disabled={!puedeGuardar || isPending}
+            className="flex-1 rounded-xl bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy-dark disabled:opacity-40 sm:flex-none"
+          >
+            {isPending
+              ? "Guardando..."
+              : modoEdicion
+                ? "Guardar cambios"
+                : "Guardar"}
+          </button>
+        </div>
       </div>
       <p className="mb-2 text-sm font-medium text-neutral-500">
         Categoría: {categoriaLabel}
@@ -205,6 +249,15 @@ export function NuevoEjercicioView({
             })}
           </ul>
         </div>
+      ) : null}
+
+      {mostrarConfirmEliminar ? (
+        <ConfirmModal
+          title="Eliminar ejercicio"
+          description={`¿Eliminar ${titulo || "este ejercicio"}? Esta acción no se puede deshacer.`}
+          onConfirm={handleEliminar}
+          onClose={() => setMostrarConfirmEliminar(false)}
+        />
       ) : null}
     </div>
   );

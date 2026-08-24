@@ -68,14 +68,13 @@ export function EjerciciosGrid({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <p className="font-medium text-neutral-900">{ejercicio.titulo}</p>
-              <p className="mt-1 text-sm text-neutral-500">
-                {ejercicio.cantidadPasos}{" "}
-                {ejercicio.cantidadPasos === 1 ? "paso" : "pasos"}
-              </p>
-            </div>
+          <p className="mb-3 font-medium text-neutral-900">{ejercicio.titulo}</p>
+
+          <div className="flex items-end justify-between gap-2">
+            <p className="text-sm text-neutral-500">
+              {ejercicio.cantidadPasos}{" "}
+              {ejercicio.cantidadPasos === 1 ? "paso" : "pasos"}
+            </p>
             <Link
               href={`/ejercicios/${categoriaSlug}/${ejercicio.id}`}
               onClick={(event) => event.stopPropagation()}

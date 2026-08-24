@@ -163,6 +163,8 @@ export function CanchaTactica({
   onClickMarcador,
   seleccionadoId,
   variante = "completa",
+  mostrarTrayectorias = false,
+  marcadoresReferencia = [],
 }: {
   marcadores: Marcador[];
   orientacion: Orientacion;
@@ -171,6 +173,8 @@ export function CanchaTactica({
   onClickMarcador?: (id: string) => void;
   seleccionadoId?: string;
   variante?: "completa" | "mini";
+  mostrarTrayectorias?: boolean;
+  marcadoresReferencia?: Marcador[];
 }) {
   const esMini = variante === "mini";
   const svgRef = useRef<SVGSVGElement>(null);
@@ -183,7 +187,7 @@ export function CanchaTactica({
 
   const width = orientacion === "vertical" ? 60 : 100;
   const height = orientacion === "vertical" ? 100 : 60;
-  const radioJugador = orientacion === "horizontal" ? 2.4 : RADIO_MARCADOR;
+  const radioJugador = orientacion === "horizontal" ? 2.1 : RADIO_MARCADOR;
 
   const getPuntoDisplay = useCallback(
     (clientX: number, clientY: number) => {
@@ -201,13 +205,45 @@ export function CanchaTactica({
     [],
   );
 
+  function radioToqueDe(marcador: Marcador) {
+    const tipo = marcador.tipo ?? "jugador";
+    const radioAnillo =
+      tipo === "jugador" ? radioJugador + 1.2 : tipo === "pelota" ? 1.8 : 2;
+    return radioAnillo + 1;
+  }
+
+  function marcadorMasCercano(clientX: number, clientY: number) {
+    const punto = getPuntoDisplay(clientX, clientY);
+    if (!punto) return null;
+
+    const px = (punto.x / 100) * width;
+    const py = (punto.y / 100) * height;
+
+    let mejorId: string | null = null;
+    let mejorDistancia = Infinity;
+
+    for (const marcador of marcadores) {
+      const disp = aDisplay(marcador.x, marcador.y, orientacion);
+      const cx = (disp.x / 100) * width;
+      const cy = (disp.y / 100) * height;
+      const distancia = Math.hypot(px - cx, py - cy);
+      if (distancia <= radioToqueDe(marcador) && distancia < mejorDistancia) {
+        mejorDistancia = distancia;
+        mejorId = marcador.id;
+      }
+    }
+
+    return mejorId;
+  }
+
   function handlePointerDown(
     event: React.PointerEvent<SVGGElement>,
     id: string,
   ) {
     if (!editable) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    setDragId(id);
+    const idElegido = marcadorMasCercano(event.clientX, event.clientY) ?? id;
+    setDragId(idElegido);
   }
 
   useEffect(() => {
@@ -284,6 +320,47 @@ export function CanchaTactica({
     >
       <LineasCancha width={width} height={height} orientacion={orientacion} />
 
+      {mostrarTrayectorias ? (
+        <g>
+          {marcadores.map((marcador) => {
+            const referencia = marcadoresReferencia.find(
+              (m) => m.id === marcador.id,
+            );
+            if (!referencia) return null;
+
+            const enArrastre = dragId === marcador.id && dragPos;
+            const disp = enArrastre
+              ? dragPos
+              : aDisplay(marcador.x, marcador.y, orientacion);
+            const dispReferencia = aDisplay(
+              referencia.x,
+              referencia.y,
+              orientacion,
+            );
+
+            if (
+              Math.abs(disp.x - dispReferencia.x) < 0.05 &&
+              Math.abs(disp.y - dispReferencia.y) < 0.05
+            ) {
+              return null;
+            }
+
+            return (
+              <line
+                key={marcador.id}
+                x1={(dispReferencia.x / 100) * width}
+                y1={(dispReferencia.y / 100) * height}
+                x2={(disp.x / 100) * width}
+                y2={(disp.y / 100) * height}
+                className="stroke-stone-300"
+                strokeWidth={0.3}
+                strokeDasharray="1.2 1"
+              />
+            );
+          })}
+        </g>
+      ) : null}
+
       {marcadores.map((marcador) => {
         const enArrastre = dragId === marcador.id && dragPos;
         const disp = enArrastre
@@ -296,7 +373,7 @@ export function CanchaTactica({
         const tipo = marcador.tipo ?? "jugador";
         const radioAnillo =
           tipo === "jugador" ? radioJugador + 1.2 : tipo === "pelota" ? 1.8 : 2;
-        const radioToque = radioAnillo + 2.5;
+        const radioToque = radioToqueDe(marcador);
 
         return (
           <g

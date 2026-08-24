@@ -35,11 +35,15 @@ export function EditorTactico({
   onChange,
   accionesExtra,
   accionesFinales,
+  mostrarTrayectorias = false,
+  marcadoresReferencia = [],
 }: {
   marcadores: Marcador[];
   onChange: (marcadores: Marcador[]) => void;
   accionesExtra?: React.ReactNode;
   accionesFinales?: React.ReactNode;
+  mostrarTrayectorias?: boolean;
+  marcadoresReferencia?: Marcador[];
 }) {
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [historialPasado, setHistorialPasado] = useState<Marcador[][]>([]);
@@ -176,6 +180,8 @@ export function EditorTactico({
             onMoverMarcador={handleMoverMarcador}
             onClickMarcador={handleClickMarcador}
             seleccionadoId={seleccionadoId ?? undefined}
+            mostrarTrayectorias={mostrarTrayectorias}
+            marcadoresReferencia={marcadoresReferencia}
           />
         </div>
         <div className="hidden lg:block">
@@ -186,6 +192,8 @@ export function EditorTactico({
             onMoverMarcador={handleMoverMarcador}
             onClickMarcador={handleClickMarcador}
             seleccionadoId={seleccionadoId ?? undefined}
+            mostrarTrayectorias={mostrarTrayectorias}
+            marcadoresReferencia={marcadoresReferencia}
           />
         </div>
       </div>

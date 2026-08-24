@@ -26,26 +26,38 @@ export function ConoForma() {
     <>
       <ellipse
         cx="0"
-        cy="3.4"
-        rx="3.4"
-        ry="0.9"
-        className="fill-amber-500 stroke-neutral-900"
-        strokeWidth={0.3}
+        cy="1.2"
+        rx="3"
+        ry="0.7"
+        className="fill-yellow-400 stroke-neutral-900"
+        strokeWidth={0.25}
       />
-      <polygon
-        points="-2.1,3.4 2.1,3.4 0.6,-3.6 -0.6,-3.6"
-        className="fill-amber-500 stroke-neutral-900"
-        strokeWidth={0.3}
+      <path
+        d="M -3,1.2 L -1.7,-0.9 L 1.7,-0.9 L 3,1.2 Z"
+        className="fill-yellow-400 stroke-neutral-900"
+        strokeWidth={0.25}
         strokeLinejoin="round"
       />
-      <polygon
-        points="-1.5,1.2 1.5,1.2 1.2,0.2 -1.2,0.2"
-        className="fill-white"
-      />
-      <ellipse cx="0" cy="-3.6" rx="0.6" ry="0.22" className="fill-amber-600" />
+      <ellipse cx="0" cy="-0.9" rx="1.7" ry="0.35" className="fill-yellow-300" />
     </>
   );
 }
+
+const PENTAGONO_INTERNO: [number, number][] = [
+  [0, -0.9],
+  [0.86, -0.28],
+  [0.53, 0.73],
+  [-0.53, 0.73],
+  [-0.86, -0.28],
+];
+
+const PENTAGONO_EXTERNO: [number, number][] = [
+  [0, -2],
+  [1.9, -0.62],
+  [1.18, 1.62],
+  [-1.18, 1.62],
+  [-1.9, -0.62],
+];
 
 export function PelotaForma() {
   return (
@@ -53,10 +65,24 @@ export function PelotaForma() {
       <circle
         r={2.1}
         className="fill-white stroke-neutral-900"
-        strokeWidth={0.35}
+        strokeWidth={0.3}
       />
+      {PENTAGONO_INTERNO.map(([x1, y1], i) => {
+        const [x2, y2] = PENTAGONO_EXTERNO[i];
+        return (
+          <line
+            key={i}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            className="stroke-neutral-900"
+            strokeWidth={0.22}
+          />
+        );
+      })}
       <polygon
-        points="0,-1 0.86,-0.28 0.53,0.73 -0.53,0.73 -0.86,-0.28"
+        points={PENTAGONO_INTERNO.map(([x, y]) => `${x},${y}`).join(" ")}
         className="fill-neutral-900"
       />
     </>
@@ -164,6 +190,10 @@ export function CanchaTactica({
 
   const width = orientacion === "vertical" ? 60 : 100;
   const height = orientacion === "vertical" ? 100 : 60;
+  // En horizontal (vista de escritorio) el contenedor renderizado es
+  // bastante más grande, así que un jugador un poco más chico en
+  // unidades del viewBox mantiene un tamaño en pantalla proporcionado.
+  const radioJugador = orientacion === "horizontal" ? 2.4 : RADIO_MARCADOR;
 
   const getPuntoDisplay = useCallback(
     (clientX: number, clientY: number) => {
@@ -228,6 +258,8 @@ export function CanchaTactica({
         const colorClase =
           marcador.color === "propio" ? "fill-blue-500" : "fill-red-500";
         const tipo = marcador.tipo ?? "jugador";
+        const radioAnillo =
+          tipo === "jugador" ? radioJugador + 1.2 : tipo === "pelota" ? 1.8 : 2;
 
         return (
           <g
@@ -242,24 +274,28 @@ export function CanchaTactica({
           >
             {seleccionadoId === marcador.id ? (
               <circle
-                r={RADIO_MARCADOR + 1.2}
+                r={radioAnillo}
                 fill="none"
                 className="stroke-white"
-                strokeWidth={0.8}
+                strokeWidth={0.4}
               />
             ) : null}
 
             {tipo === "pelota" ? (
-              <PelotaForma />
+              <g transform="scale(0.55)">
+                <PelotaForma />
+              </g>
             ) : tipo === "cono" ? (
-              <ConoForma />
+              <g transform="scale(0.45)">
+                <ConoForma />
+              </g>
             ) : (
               <>
-                <circle r={RADIO_MARCADOR} className={colorClase} />
+                <circle r={radioJugador} className={colorClase} />
                 <text
                   textAnchor="middle"
                   dominantBaseline="central"
-                  fontSize={RADIO_MARCADOR}
+                  fontSize={radioJugador}
                   className="fill-white font-mono"
                 >
                   {marcador.numero}
@@ -269,7 +305,7 @@ export function CanchaTactica({
 
             {tipo === "jugador" && marcador.etiqueta ? (
               <text
-                y={RADIO_MARCADOR + 3}
+                y={radioJugador + 3}
                 textAnchor="middle"
                 fontSize={2.6}
                 className="fill-white"

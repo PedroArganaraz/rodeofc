@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import {
   CanchaTactica,
   ConoForma,
@@ -34,6 +34,8 @@ export function EditorTactico({
   onChange: (marcadores: Marcador[]) => void;
 }) {
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
+  const [historialPasado, setHistorialPasado] = useState<Marcador[][]>([]);
+  const [historialFuturo, setHistorialFuturo] = useState<Marcador[][]>([]);
 
   const numerosPropiosEnCancha = new Set(
     marcadores
@@ -46,9 +48,31 @@ export function EditorTactico({
       .map((m) => m.numero),
   );
 
+  function aplicarCambio(nuevo: Marcador[]) {
+    setHistorialPasado((prev) => [...prev, marcadores]);
+    setHistorialFuturo([]);
+    onChange(nuevo);
+  }
+
+  function deshacer() {
+    if (historialPasado.length === 0) return;
+    const anterior = historialPasado[historialPasado.length - 1];
+    setHistorialPasado((prev) => prev.slice(0, -1));
+    setHistorialFuturo((prev) => [...prev, marcadores]);
+    onChange(anterior);
+  }
+
+  function rehacer() {
+    if (historialFuturo.length === 0) return;
+    const siguiente = historialFuturo[historialFuturo.length - 1];
+    setHistorialFuturo((prev) => prev.slice(0, -1));
+    setHistorialPasado((prev) => [...prev, marcadores]);
+    onChange(siguiente);
+  }
+
   function agregarJugador(numero: string, color: ColorMarcador) {
     const pos = posicionPorDefecto(marcadores.length);
-    onChange([
+    aplicarCambio([
       ...marcadores,
       { id: crearId(), x: pos.x, y: pos.y, numero, color, tipo: "jugador" },
     ]);
@@ -56,7 +80,7 @@ export function EditorTactico({
 
   function agregarCono() {
     const pos = posicionPorDefecto(marcadores.length);
-    onChange([
+    aplicarCambio([
       ...marcadores,
       { id: crearId(), x: pos.x, y: pos.y, numero: "", color: "propio", tipo: "cono" },
     ]);
@@ -64,14 +88,14 @@ export function EditorTactico({
 
   function agregarPelota() {
     const pos = posicionPorDefecto(marcadores.length);
-    onChange([
+    aplicarCambio([
       ...marcadores,
       { id: crearId(), x: pos.x, y: pos.y, numero: "", color: "propio", tipo: "pelota" },
     ]);
   }
 
   function handleMoverMarcador(id: string, x: number, y: number) {
-    onChange(
+    aplicarCambio(
       marcadores.map((marcador) =>
         marcador.id === id ? { ...marcador, x, y } : marcador,
       ),
@@ -84,14 +108,48 @@ export function EditorTactico({
 
   function handleEliminarSeleccionado() {
     if (!seleccionadoId) return;
-    onChange(marcadores.filter((marcador) => marcador.id !== seleccionadoId));
+    aplicarCambio(marcadores.filter((marcador) => marcador.id !== seleccionadoId));
     setSeleccionadoId(null);
   }
 
   function handleLimpiarCancha() {
-    onChange([]);
+    aplicarCambio([]);
     setSeleccionadoId(null);
   }
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const enCampoDeTexto =
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.isContentEditable;
+      if (enCampoDeTexto) return;
+
+      const ctrlOCmd = event.ctrlKey || event.metaKey;
+
+      if (ctrlOCmd && event.key.toLowerCase() === "z" && !event.shiftKey) {
+        event.preventDefault();
+        deshacer();
+        return;
+      }
+
+      if (ctrlOCmd && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        rehacer();
+        return;
+      }
+
+      if (event.key === "Delete" || event.key === "Backspace") {
+        event.preventDefault();
+        handleEliminarSeleccionado();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marcadores, historialPasado, historialFuturo, seleccionadoId]);
 
   return (
     <div
@@ -122,6 +180,29 @@ export function EditorTactico({
       </div>
 
       <div className="space-y-4 lg:w-56 lg:shrink-0">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={historialPasado.length === 0}
+            onClick={deshacer}
+            aria-label="Deshacer (Ctrl+Z)"
+            title="Deshacer (Ctrl+Z)"
+            className="flex flex-1 items-center justify-center rounded-xl border border-stone-300 bg-white py-2 text-neutral-900 hover:bg-stone-100 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            disabled={historialFuturo.length === 0}
+            onClick={rehacer}
+            aria-label="Rehacer (Ctrl+Y)"
+            title="Rehacer (Ctrl+Y)"
+            className="flex flex-1 items-center justify-center rounded-xl border border-stone-300 bg-white py-2 text-neutral-900 hover:bg-stone-100 disabled:opacity-40"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+
         <button
           type="button"
           disabled={marcadores.length === 0}
@@ -135,10 +216,11 @@ export function EditorTactico({
           <button
             type="button"
             onClick={handleEliminarSeleccionado}
+            title="Eliminar (Supr)"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-500/20"
           >
             <Trash2 className="h-4 w-4" />
-            Eliminar elemento seleccionado
+            Eliminar
           </button>
         ) : null}
 

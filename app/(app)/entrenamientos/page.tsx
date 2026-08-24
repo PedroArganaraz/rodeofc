@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { EntrenamientosGrid } from "./entrenamientos-grid";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
+import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/cancha-tactica";
 
 export default async function EntrenamientosPage() {
   const supabase = await createClient();
@@ -84,8 +84,10 @@ export default async function EntrenamientosPage() {
               entrenamiento["entrenamientos-ejercicios"]?.[0]?.count ?? 0,
             miniaturas: (ejerciciosPorEntrenamiento.get(entrenamiento.id) ?? []).map(
               (ejercicioId) =>
-                (posicionesPorEjercicio.get(ejercicioId) ??
-                  []) as unknown as Marcador[],
+                (
+                  (posicionesPorEjercicio.get(ejercicioId) ??
+                    []) as unknown as ElementoCancha[]
+                ).filter((elemento) => !esForma(elemento)) as Marcador[],
             ),
           }))}
         />

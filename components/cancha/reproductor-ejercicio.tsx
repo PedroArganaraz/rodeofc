@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
-import { CanchaTactica, type Marcador } from "./cancha-tactica";
+import { CanchaTactica, type Forma, type Marcador } from "./cancha-tactica";
 
 const DURACION_BASE_MS = 1200;
 
@@ -10,6 +10,7 @@ type Paso = {
   id: string;
   nombre: string | null;
   marcadores: Marcador[];
+  formas: Forma[];
 };
 
 function interpolarMarcadores(
@@ -27,6 +28,23 @@ function interpolarMarcadores(
       ...marcador,
       x: anterior.x + (marcador.x - anterior.x) * t,
       y: anterior.y + (marcador.y - anterior.y) * t,
+    };
+  });
+}
+
+function interpolarFormas(origen: Paso, destino: Paso, t: number): Forma[] {
+  const mapaOrigen = new Map(origen.formas.map((f) => [f.id, f]));
+
+  return destino.formas.map((forma) => {
+    const anterior = mapaOrigen.get(forma.id);
+    if (!anterior) return forma;
+
+    return {
+      ...forma,
+      x1: anterior.x1 + (forma.x1 - anterior.x1) * t,
+      y1: anterior.y1 + (forma.y1 - anterior.y1) * t,
+      x2: anterior.x2 + (forma.x2 - anterior.x2) * t,
+      y2: anterior.y2 + (forma.y2 - anterior.y2) * t,
     };
   });
 }
@@ -96,14 +114,24 @@ export function ReproductorEjercicio({ pasos }: { pasos: Paso[] }) {
       ? interpolarMarcadores(pasos[pasoIndex], pasos[pasoIndex + 1], progreso)
       : pasoMostrado.marcadores;
 
+  const formasMostradas =
+    progreso > 0 && hayPasoSiguiente
+      ? interpolarFormas(pasos[pasoIndex], pasos[pasoIndex + 1], progreso)
+      : pasoMostrado.formas;
+
   return (
     <div className="space-y-4">
       <div className="mx-auto max-w-xs lg:hidden">
-        <CanchaTactica marcadores={marcadoresMostrados} orientacion="vertical" />
+        <CanchaTactica
+          marcadores={marcadoresMostrados}
+          formas={formasMostradas}
+          orientacion="vertical"
+        />
       </div>
       <div className="hidden lg:block">
         <CanchaTactica
           marcadores={marcadoresMostrados}
+          formas={formasMostradas}
           orientacion="horizontal"
         />
       </div>

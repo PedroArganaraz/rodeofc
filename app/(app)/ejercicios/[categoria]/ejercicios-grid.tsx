@@ -5,12 +5,13 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { ModalReproducir } from "@/components/ejercicios/modal-reproducir";
 import { obtenerPasosEjercicio } from "../actions";
-import { CanchaTactica, type Marcador } from "@/components/cancha/cancha-tactica";
+import { CanchaTactica, type Forma, type Marcador } from "@/components/cancha/cancha-tactica";
 
 type Paso = {
   id: string;
   nombre: string | null;
   marcadores: Marcador[];
+  formas: Forma[];
 };
 
 type Ejercicio = {

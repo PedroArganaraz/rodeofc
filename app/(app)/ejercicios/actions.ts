@@ -2,11 +2,17 @@
 
 import { createClient } from "@/utils/supabase/server";
 import type { Json, TablesInsert } from "@/types/database.types";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
+import {
+  esForma,
+  type ElementoCancha,
+  type Forma,
+  type Marcador,
+} from "@/components/cancha/cancha-tactica";
 
 export type PasoInput = {
   nombre: string | null;
   marcadores: Marcador[];
+  formas: Forma[];
 };
 
 async function getEquipoIdDelUsuario() {
@@ -35,7 +41,7 @@ function armarPasosPayload(ejercicioId: string, pasos: PasoInput[]) {
       ejercicio_id: ejercicioId,
       orden: indice + 1,
       nombre: paso.nombre,
-      posiciones: paso.marcadores as unknown as Json,
+      posiciones: [...paso.marcadores, ...paso.formas] as unknown as Json,
     }),
   );
 
@@ -123,9 +129,13 @@ export async function obtenerPasosEjercicio(ejercicioId: string) {
 
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((paso) => ({
-    id: paso.id,
-    nombre: paso.nombre,
-    marcadores: (paso.posiciones ?? []) as unknown as Marcador[],
-  }));
+  return (data ?? []).map((paso) => {
+    const elementos = (paso.posiciones ?? []) as unknown as ElementoCancha[];
+    return {
+      id: paso.id,
+      nombre: paso.nombre,
+      marcadores: elementos.filter((el) => !esForma(el)) as Marcador[],
+      formas: elementos.filter(esForma),
+    };
+  });
 }

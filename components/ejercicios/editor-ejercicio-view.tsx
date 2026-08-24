@@ -16,7 +16,7 @@ import {
 import { EditorTactico } from "@/components/cancha/editor-tactico";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { ModalReproducir } from "@/components/ejercicios/modal-reproducir";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
+import type { Forma, Marcador } from "@/components/cancha/cancha-tactica";
 import {
   crearEjercicio,
   actualizarEjercicio,
@@ -27,6 +27,7 @@ type Paso = {
   id: string;
   nombre: string | null;
   marcadores: Marcador[];
+  formas: Forma[];
 };
 
 function crearId() {
@@ -55,6 +56,9 @@ export function EditorEjercicioView({
   const [marcadores, setMarcadores] = useState<Marcador[]>(
     pasosIniciales?.[0]?.marcadores ?? [],
   );
+  const [formas, setFormas] = useState<Forma[]>(
+    pasosIniciales?.[0]?.formas ?? [],
+  );
   const [pasos, setPasos] = useState<Paso[]>(pasosIniciales ?? []);
   const [pasoCargadoId, setPasoCargadoId] = useState<string | null>(
     pasosIniciales?.[0]?.id ?? null,
@@ -76,12 +80,16 @@ export function EditorEjercicioView({
   const puedeGuardar = titulo.trim() !== "" && pasos.length > 0;
 
   function handleAgregarPaso() {
-    setPasos((prev) => [...prev, { id: crearId(), nombre: null, marcadores }]);
+    setPasos((prev) => [
+      ...prev,
+      { id: crearId(), nombre: null, marcadores, formas },
+    ]);
     setReferencia(marcadores);
   }
 
   function handleCargarPaso(paso: Paso) {
     setMarcadores(paso.marcadores);
+    setFormas(paso.formas);
     setPasoCargadoId(paso.id);
     setReferencia(paso.marcadores);
   }
@@ -211,6 +219,7 @@ export function EditorEjercicioView({
         const pasosPayload = pasos.map((paso) => ({
           nombre: paso.nombre,
           marcadores: paso.marcadores,
+          formas: paso.formas,
         }));
 
         if (modoEdicion && ejercicioId) {
@@ -286,6 +295,8 @@ export function EditorEjercicioView({
       <EditorTactico
         marcadores={marcadores}
         onChange={setMarcadores}
+        formas={formas}
+        onChangeFormas={setFormas}
         mostrarTrayectorias
         marcadoresReferencia={referencia}
         accionesExtra={

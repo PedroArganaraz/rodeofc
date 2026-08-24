@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  Square,
+  Trash2,
+} from "lucide-react";
 import {
   CanchaTactica,
   ConoForma,
   PelotaForma,
   type ColorMarcador,
+  type Forma,
   type Marcador,
+  type TipoForma,
 } from "./cancha-tactica";
 
 const SECUENCIA_NUMEROS = ["10", "11", "9", "7", "6", "2", "1"];
@@ -30,9 +39,13 @@ function posicionPorDefecto(indice: number) {
   return { x: 30 + col * paso, y: 40 + fila * paso };
 }
 
+type Historial = { marcadores: Marcador[]; formas: Forma[] };
+
 export function EditorTactico({
   marcadores,
   onChange,
+  formas = [],
+  onChangeFormas,
   accionesExtra,
   accionesFinales,
   mostrarTrayectorias = false,
@@ -40,14 +53,20 @@ export function EditorTactico({
 }: {
   marcadores: Marcador[];
   onChange: (marcadores: Marcador[]) => void;
+  formas?: Forma[];
+  onChangeFormas?: (formas: Forma[]) => void;
   accionesExtra?: React.ReactNode;
   accionesFinales?: React.ReactNode;
   mostrarTrayectorias?: boolean;
   marcadoresReferencia?: Marcador[];
 }) {
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
-  const [historialPasado, setHistorialPasado] = useState<Marcador[][]>([]);
-  const [historialFuturo, setHistorialFuturo] = useState<Marcador[][]>([]);
+  const [historialPasado, setHistorialPasado] = useState<Historial[]>([]);
+  const [historialFuturo, setHistorialFuturo] = useState<Historial[]>([]);
+  const [modoDibujo, setModoDibujo] = useState<{
+    tipo: TipoForma;
+    color: ColorMarcador;
+  } | null>(null);
 
   const numerosPropiosEnCancha = new Set(
     marcadores
@@ -63,58 +82,93 @@ export function EditorTactico({
   const proximoPropio = proximoDisponible(numerosPropiosEnCancha);
   const proximoRival = proximoDisponible(numerosRivalesEnCancha);
 
-  function aplicarCambio(nuevo: Marcador[]) {
-    setHistorialPasado((prev) => [...prev, marcadores]);
+  function aplicarCambio(cambio: { marcadores?: Marcador[]; formas?: Forma[] }) {
+    setHistorialPasado((prev) => [...prev, { marcadores, formas }]);
     setHistorialFuturo([]);
-    onChange(nuevo);
+    if (cambio.marcadores) onChange(cambio.marcadores);
+    if (cambio.formas) onChangeFormas?.(cambio.formas);
   }
 
   function deshacer() {
     if (historialPasado.length === 0) return;
     const anterior = historialPasado[historialPasado.length - 1];
     setHistorialPasado((prev) => prev.slice(0, -1));
-    setHistorialFuturo((prev) => [...prev, marcadores]);
-    onChange(anterior);
+    setHistorialFuturo((prev) => [...prev, { marcadores, formas }]);
+    onChange(anterior.marcadores);
+    onChangeFormas?.(anterior.formas);
   }
 
   function rehacer() {
     if (historialFuturo.length === 0) return;
     const siguiente = historialFuturo[historialFuturo.length - 1];
     setHistorialFuturo((prev) => prev.slice(0, -1));
-    setHistorialPasado((prev) => [...prev, marcadores]);
-    onChange(siguiente);
+    setHistorialPasado((prev) => [...prev, { marcadores, formas }]);
+    onChange(siguiente.marcadores);
+    onChangeFormas?.(siguiente.formas);
   }
 
   function agregarJugador(numero: string, color: ColorMarcador) {
     const pos = posicionPorDefecto(marcadores.length);
-    aplicarCambio([
-      ...marcadores,
-      { id: crearId(), x: pos.x, y: pos.y, numero, color, tipo: "jugador" },
-    ]);
+    aplicarCambio({
+      marcadores: [
+        ...marcadores,
+        { id: crearId(), x: pos.x, y: pos.y, numero, color, tipo: "jugador" },
+      ],
+    });
   }
 
   function agregarCono() {
     const pos = posicionPorDefecto(marcadores.length);
-    aplicarCambio([
-      ...marcadores,
-      { id: crearId(), x: pos.x, y: pos.y, numero: "", color: "propio", tipo: "cono" },
-    ]);
+    aplicarCambio({
+      marcadores: [
+        ...marcadores,
+        { id: crearId(), x: pos.x, y: pos.y, numero: "", color: "propio", tipo: "cono" },
+      ],
+    });
   }
 
   function agregarPelota() {
     const pos = posicionPorDefecto(marcadores.length);
-    aplicarCambio([
-      ...marcadores,
-      { id: crearId(), x: pos.x, y: pos.y, numero: "", color: "propio", tipo: "pelota" },
-    ]);
+    aplicarCambio({
+      marcadores: [
+        ...marcadores,
+        { id: crearId(), x: pos.x, y: pos.y, numero: "", color: "propio", tipo: "pelota" },
+      ],
+    });
   }
 
   function handleMoverMarcador(id: string, x: number, y: number) {
-    aplicarCambio(
-      marcadores.map((marcador) =>
+    aplicarCambio({
+      marcadores: marcadores.map((marcador) =>
         marcador.id === id ? { ...marcador, x, y } : marcador,
       ),
+    });
+  }
+
+  function handleMoverForma(
+    id: string,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ) {
+    aplicarCambio({
+      formas: formas.map((forma) =>
+        forma.id === id ? { ...forma, x1, y1, x2, y2 } : forma,
+      ),
+    });
+  }
+
+  function handleCrearForma(nueva: Omit<Forma, "id">) {
+    aplicarCambio({ formas: [...formas, { id: crearId(), ...nueva }] });
+    setSeleccionadoId(null);
+  }
+
+  function alternarHerramienta(tipo: TipoForma) {
+    setModoDibujo((actual) =>
+      actual && actual.tipo === tipo ? null : { tipo, color: "propio" },
     );
+    setSeleccionadoId(null);
   }
 
   function handleClickMarcador(id: string) {
@@ -123,12 +177,18 @@ export function EditorTactico({
 
   function handleEliminarSeleccionado() {
     if (!seleccionadoId) return;
-    aplicarCambio(marcadores.filter((marcador) => marcador.id !== seleccionadoId));
+    if (formas.some((forma) => forma.id === seleccionadoId)) {
+      aplicarCambio({ formas: formas.filter((forma) => forma.id !== seleccionadoId) });
+    } else {
+      aplicarCambio({
+        marcadores: marcadores.filter((marcador) => marcador.id !== seleccionadoId),
+      });
+    }
     setSeleccionadoId(null);
   }
 
   function handleLimpiarCancha() {
-    aplicarCambio([]);
+    aplicarCambio({ marcadores: [], formas: [] });
     setSeleccionadoId(null);
   }
 
@@ -164,7 +224,13 @@ export function EditorTactico({
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [marcadores, historialPasado, historialFuturo, seleccionadoId]);
+  }, [marcadores, formas, historialPasado, historialFuturo, seleccionadoId]);
+
+  const herramientas: { tipo: TipoForma; icono: typeof ArrowUpRight }[] = [
+    { tipo: "flecha", icono: ArrowUpRight },
+    { tipo: "rectangulo", icono: Square },
+    { tipo: "circulo", icono: Circle },
+  ];
 
   return (
     <div
@@ -175,25 +241,35 @@ export function EditorTactico({
         <div className="mx-auto max-w-xs lg:hidden">
           <CanchaTactica
             marcadores={marcadores}
+            formas={formas}
             orientacion="vertical"
             editable
             onMoverMarcador={handleMoverMarcador}
+            onMoverForma={handleMoverForma}
             onClickMarcador={handleClickMarcador}
             seleccionadoId={seleccionadoId ?? undefined}
             mostrarTrayectorias={mostrarTrayectorias}
             marcadoresReferencia={marcadoresReferencia}
+            modoDibujo={modoDibujo}
+            onCrearForma={handleCrearForma}
+            onSalirModoDibujo={() => setModoDibujo(null)}
           />
         </div>
         <div className="hidden lg:block">
           <CanchaTactica
             marcadores={marcadores}
+            formas={formas}
             orientacion="horizontal"
             editable
             onMoverMarcador={handleMoverMarcador}
+            onMoverForma={handleMoverForma}
             onClickMarcador={handleClickMarcador}
             seleccionadoId={seleccionadoId ?? undefined}
             mostrarTrayectorias={mostrarTrayectorias}
             marcadoresReferencia={marcadoresReferencia}
+            modoDibujo={modoDibujo}
+            onCrearForma={handleCrearForma}
+            onSalirModoDibujo={() => setModoDibujo(null)}
           />
         </div>
       </div>
@@ -224,7 +300,7 @@ export function EditorTactico({
 
         <button
           type="button"
-          disabled={marcadores.length === 0}
+          disabled={marcadores.length === 0 && formas.length === 0}
           onClick={handleLimpiarCancha}
           className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-stone-100 disabled:opacity-40"
         >
@@ -286,6 +362,28 @@ export function EditorTactico({
                 <PelotaForma />
               </svg>
             </button>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-stone-300 bg-white p-4">
+          <h3 className="mb-3 text-sm font-medium text-neutral-500">Formas</h3>
+          <div className="flex items-center justify-center gap-2">
+            {herramientas.map(({ tipo, icono: Icono }) => {
+              const activo = modoDibujo?.tipo === tipo;
+              return (
+                <button
+                  key={tipo}
+                  type="button"
+                  onClick={() => alternarHerramienta(tipo)}
+                  aria-label={`Dibujar ${tipo}`}
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-blue-500 hover:bg-stone-100 ${
+                    activo ? "bg-stone-300" : ""
+                  }`}
+                >
+                  <Icono className="h-5 w-5" />
+                </button>
+              );
+            })}
           </div>
         </div>
 

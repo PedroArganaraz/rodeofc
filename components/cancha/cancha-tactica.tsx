@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ColorMarcador = "propio" | "rival";
 export type TipoMarcador = "jugador" | "pelota" | "cono";
+export type TipoForma = "flecha" | "rectangulo" | "circulo";
 
 export type Marcador = {
   id: string;
@@ -14,6 +15,22 @@ export type Marcador = {
   etiqueta?: string;
   tipo?: TipoMarcador;
 };
+
+export type Forma = {
+  id: string;
+  tipo: TipoForma;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  color: ColorMarcador;
+};
+
+export type ElementoCancha = Marcador | Forma;
+
+export function esForma(item: ElementoCancha): item is Forma {
+  return "x1" in item;
+}
 
 export type Orientacion = "vertical" | "horizontal";
 
@@ -155,35 +172,58 @@ function LineasCancha({
   );
 }
 
+type Arrastre =
+  | { tipo: "marcador"; id: string }
+  | { tipo: "forma-cuerpo"; id: string; origen: { x: number; y: number }; original: Forma }
+  | { tipo: "forma-extremo"; id: string; extremo: 1 | 2; original: Forma }
+  | {
+      tipo: "dibujo";
+      herramienta: TipoForma;
+      color: ColorMarcador;
+      origen: { x: number; y: number };
+    };
+
 export function CanchaTactica({
   marcadores,
+  formas = [],
   orientacion,
   editable = false,
   onMoverMarcador,
+  onMoverForma,
   onClickMarcador,
   seleccionadoId,
   variante = "completa",
   mostrarTrayectorias = false,
   marcadoresReferencia = [],
+  modoDibujo = null,
+  onCrearForma,
+  onSalirModoDibujo,
 }: {
   marcadores: Marcador[];
+  formas?: Forma[];
   orientacion: Orientacion;
   editable?: boolean;
   onMoverMarcador?: (id: string, x: number, y: number) => void;
+  onMoverForma?: (id: string, x1: number, y1: number, x2: number, y2: number) => void;
   onClickMarcador?: (id: string) => void;
   seleccionadoId?: string;
   variante?: "completa" | "mini";
   mostrarTrayectorias?: boolean;
   marcadoresReferencia?: Marcador[];
+  modoDibujo?: { tipo: TipoForma; color: ColorMarcador } | null;
+  onCrearForma?: (forma: Omit<Forma, "id">) => void;
+  onSalirModoDibujo?: () => void;
 }) {
   const esMini = variante === "mini";
   const svgRef = useRef<SVGSVGElement>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
+  const [arrastre, setArrastre] = useState<Arrastre | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
-  const estadoDragRef = useRef({ dragId, dragPos });
+  const estadoDragRef = useRef({ arrastre, dragPos });
   useEffect(() => {
-    estadoDragRef.current = { dragId, dragPos };
-  }, [dragId, dragPos]);
+    estadoDragRef.current = { arrastre, dragPos };
+  }, [arrastre, dragPos]);
+
+  const dragId = arrastre?.tipo === "marcador" ? arrastre.id : null;
 
   const width = orientacion === "vertical" ? 60 : 100;
   const height = orientacion === "vertical" ? 100 : 60;
@@ -240,14 +280,49 @@ export function CanchaTactica({
     event: React.PointerEvent<SVGGElement>,
     id: string,
   ) {
-    if (!editable) return;
+    if (!editable || modoDibujo) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     const idElegido = marcadorMasCercano(event.clientX, event.clientY) ?? id;
-    setDragId(idElegido);
+    setArrastre({ tipo: "marcador", id: idElegido });
+  }
+
+  function handlePointerDownFormaCuerpo(
+    event: React.PointerEvent<SVGElement>,
+    forma: Forma,
+  ) {
+    if (!editable || modoDibujo) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const punto = getPuntoDisplay(event.clientX, event.clientY);
+    if (!punto) return;
+    setArrastre({ tipo: "forma-cuerpo", id: forma.id, origen: punto, original: forma });
+  }
+
+  function handlePointerDownExtremo(
+    event: React.PointerEvent<SVGCircleElement>,
+    forma: Forma,
+    extremo: 1 | 2,
+  ) {
+    if (!editable || modoDibujo) return;
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setArrastre({ tipo: "forma-extremo", id: forma.id, extremo, original: forma });
+  }
+
+  function handlePointerDownSvg(event: React.PointerEvent<SVGSVGElement>) {
+    if (!editable || !modoDibujo) return;
+    const punto = getPuntoDisplay(event.clientX, event.clientY);
+    if (!punto) return;
+    svgRef.current?.setPointerCapture(event.pointerId);
+    setArrastre({
+      tipo: "dibujo",
+      herramienta: modoDibujo.tipo,
+      color: modoDibujo.color,
+      origen: punto,
+    });
   }
 
   useEffect(() => {
-    if (!dragId) return;
+    if (!arrastre) return;
     const svg = svgRef.current;
     if (!svg) return;
 
@@ -262,11 +337,43 @@ export function CanchaTactica({
       if (finalizado) return;
       finalizado = true;
       const actual = estadoDragRef.current;
-      if (actual.dragId && actual.dragPos) {
-        const canonico = aCanonico(actual.dragPos.x, actual.dragPos.y, orientacion);
-        onMoverMarcador?.(actual.dragId, canonico.x, canonico.y);
+      if (actual.arrastre && actual.dragPos) {
+        const a = actual.arrastre;
+        const canon = aCanonico(actual.dragPos.x, actual.dragPos.y, orientacion);
+
+        if (a.tipo === "marcador") {
+          onMoverMarcador?.(a.id, canon.x, canon.y);
+        } else if (a.tipo === "forma-cuerpo") {
+          const origenCanon = aCanonico(a.origen.x, a.origen.y, orientacion);
+          const dx = canon.x - origenCanon.x;
+          const dy = canon.y - origenCanon.y;
+          onMoverForma?.(
+            a.id,
+            a.original.x1 + dx,
+            a.original.y1 + dy,
+            a.original.x2 + dx,
+            a.original.y2 + dy,
+          );
+        } else if (a.tipo === "forma-extremo") {
+          if (a.extremo === 1) {
+            onMoverForma?.(a.id, canon.x, canon.y, a.original.x2, a.original.y2);
+          } else {
+            onMoverForma?.(a.id, a.original.x1, a.original.y1, canon.x, canon.y);
+          }
+        } else if (a.tipo === "dibujo") {
+          const origenCanon = aCanonico(a.origen.x, a.origen.y, orientacion);
+          onCrearForma?.({
+            tipo: a.herramienta,
+            color: a.color,
+            x1: origenCanon.x,
+            y1: origenCanon.y,
+            x2: canon.x,
+            y2: canon.y,
+          });
+          onSalirModoDibujo?.();
+        }
       }
-      setDragId(null);
+      setArrastre(null);
       setDragPos(null);
     }
 
@@ -308,15 +415,42 @@ export function CanchaTactica({
       svg.removeEventListener("touchend", onTouchEndNativo);
       svg.removeEventListener("touchcancel", onTouchEndNativo);
     };
-  }, [dragId, getPuntoDisplay, onMoverMarcador, orientacion]);
+  }, [arrastre, getPuntoDisplay, onMoverMarcador, onMoverForma, onCrearForma, onSalirModoDibujo, orientacion]);
+
+  function puntosFormaDisplay(forma: Forma) {
+    if (arrastre?.tipo === "forma-cuerpo" && arrastre.id === forma.id && dragPos) {
+      const d1 = aDisplay(arrastre.original.x1, arrastre.original.y1, orientacion);
+      const d2 = aDisplay(arrastre.original.x2, arrastre.original.y2, orientacion);
+      const dx = dragPos.x - arrastre.origen.x;
+      const dy = dragPos.y - arrastre.origen.y;
+      return {
+        p1: { x: d1.x + dx, y: d1.y + dy },
+        p2: { x: d2.x + dx, y: d2.y + dy },
+      };
+    }
+    if (arrastre?.tipo === "forma-extremo" && arrastre.id === forma.id && dragPos) {
+      const otro =
+        arrastre.extremo === 1
+          ? aDisplay(arrastre.original.x2, arrastre.original.y2, orientacion)
+          : aDisplay(arrastre.original.x1, arrastre.original.y1, orientacion);
+      return arrastre.extremo === 1
+        ? { p1: dragPos, p2: otro }
+        : { p1: otro, p2: dragPos };
+    }
+    return {
+      p1: aDisplay(forma.x1, forma.y1, orientacion),
+      p2: aDisplay(forma.x2, forma.y2, orientacion),
+    };
+  }
 
   return (
     <svg
       ref={svgRef}
       viewBox={`0 0 ${width} ${height}`}
+      onPointerDown={handlePointerDownSvg}
       className={`w-full select-none rounded-xl bg-field-green ${
         orientacion === "vertical" ? "aspect-[60/100]" : "aspect-[100/60]"
-      }`}
+      } ${modoDibujo ? "touch-none cursor-crosshair" : ""}`}
     >
       <LineasCancha width={width} height={height} orientacion={orientacion} />
 
@@ -360,6 +494,160 @@ export function CanchaTactica({
           })}
         </g>
       ) : null}
+
+      {formas.map((forma) => {
+        const { p1, p2 } = puntosFormaDisplay(forma);
+        const x1 = (p1.x / 100) * width;
+        const y1 = (p1.y / 100) * height;
+        const x2 = (p2.x / 100) * width;
+        const y2 = (p2.y / 100) * height;
+        const seleccionada = seleccionadoId === forma.id;
+        const colorStroke = forma.color === "propio" ? "stroke-blue-500" : "stroke-red-500";
+        const colorFill = forma.color === "propio" ? "fill-blue-500/30" : "fill-red-500/30";
+        const colorSolido = forma.color === "propio" ? "fill-blue-500" : "fill-red-500";
+
+        const cuerpoProps = {
+          onPointerDown: (event: React.PointerEvent<SVGElement>) =>
+            handlePointerDownFormaCuerpo(event, forma),
+          onClick: (event: React.MouseEvent) => {
+            event.stopPropagation();
+            onClickMarcador?.(forma.id);
+          },
+          style: editable ? { cursor: "grab" } : undefined,
+        };
+
+        return (
+          <g key={forma.id}>
+            {forma.tipo === "flecha" ? (
+              (() => {
+                const angulo = Math.atan2(y2 - y1, x2 - x1);
+                const largo = 1.7;
+                const ancho = 0.85;
+                const bx = x2 - largo * Math.cos(angulo);
+                const by = y2 - largo * Math.sin(angulo);
+                const p1x = bx - ancho * Math.sin(angulo);
+                const p1y = by + ancho * Math.cos(angulo);
+                const p2x = bx + ancho * Math.sin(angulo);
+                const p2y = by - ancho * Math.cos(angulo);
+                return (
+                  <>
+                    <line
+                      x1={x1}
+                      y1={y1}
+                      x2={bx}
+                      y2={by}
+                      className={colorStroke}
+                      strokeWidth={0.35}
+                      {...cuerpoProps}
+                    />
+                    <polygon
+                      points={`${x2},${y2} ${p1x},${p1y} ${p2x},${p2y}`}
+                      className={colorSolido}
+                      {...cuerpoProps}
+                    />
+                  </>
+                );
+              })()
+            ) : forma.tipo === "rectangulo" ? (
+              <rect
+                x={Math.min(x1, x2)}
+                y={Math.min(y1, y2)}
+                width={Math.abs(x2 - x1)}
+                height={Math.abs(y2 - y1)}
+                className={`${colorFill} ${colorStroke}`}
+                strokeWidth={0.3}
+                {...cuerpoProps}
+              />
+            ) : (
+              <ellipse
+                cx={(x1 + x2) / 2}
+                cy={(y1 + y2) / 2}
+                rx={Math.abs(x2 - x1) / 2}
+                ry={Math.abs(y2 - y1) / 2}
+                className={`${colorFill} ${colorStroke}`}
+                strokeWidth={0.3}
+                {...cuerpoProps}
+              />
+            )}
+
+            {editable && seleccionada ? (
+              <>
+                <circle
+                  cx={x1}
+                  cy={y1}
+                  r={1.6}
+                  className="touch-none fill-white stroke-neutral-900"
+                  strokeWidth={0.3}
+                  style={{ pointerEvents: "all" }}
+                  onPointerDown={(event) => handlePointerDownExtremo(event, forma, 1)}
+                />
+                <circle
+                  cx={x2}
+                  cy={y2}
+                  r={1.6}
+                  className="touch-none fill-white stroke-neutral-900"
+                  strokeWidth={0.3}
+                  style={{ pointerEvents: "all" }}
+                  onPointerDown={(event) => handlePointerDownExtremo(event, forma, 2)}
+                />
+              </>
+            ) : null}
+          </g>
+        );
+      })}
+
+      {arrastre?.tipo === "dibujo" && dragPos
+        ? (() => {
+            const p1 = arrastre.origen;
+            const p2 = dragPos;
+            const x1 = (p1.x / 100) * width;
+            const y1 = (p1.y / 100) * height;
+            const x2 = (p2.x / 100) * width;
+            const y2 = (p2.y / 100) * height;
+            const colorStroke =
+              arrastre.color === "propio" ? "stroke-blue-500" : "stroke-red-500";
+            const colorFill =
+              arrastre.color === "propio" ? "fill-blue-500/30" : "fill-red-500/30";
+
+            if (arrastre.herramienta === "flecha") {
+              return (
+                <line
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  className={colorStroke}
+                  strokeWidth={0.35}
+                  strokeDasharray="1.5 1"
+                />
+              );
+            }
+            if (arrastre.herramienta === "rectangulo") {
+              return (
+                <rect
+                  x={Math.min(x1, x2)}
+                  y={Math.min(y1, y2)}
+                  width={Math.abs(x2 - x1)}
+                  height={Math.abs(y2 - y1)}
+                  className={`${colorFill} ${colorStroke}`}
+                  strokeWidth={0.3}
+                  strokeDasharray="1.5 1"
+                />
+              );
+            }
+            return (
+              <ellipse
+                cx={(x1 + x2) / 2}
+                cy={(y1 + y2) / 2}
+                rx={Math.abs(x2 - x1) / 2}
+                ry={Math.abs(y2 - y1) / 2}
+                className={`${colorFill} ${colorStroke}`}
+                strokeWidth={0.3}
+                strokeDasharray="1.5 1"
+              />
+            );
+          })()
+        : null}
 
       {marcadores.map((marcador) => {
         const enArrastre = dragId === marcador.id && dragPos;

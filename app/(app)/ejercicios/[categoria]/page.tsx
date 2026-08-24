@@ -4,7 +4,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { CATEGORIAS, type CategoriaEjercicio } from "../categorias";
 import { EjerciciosGrid } from "./ejercicios-grid";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
+import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/cancha-tactica";
 
 export default async function EjerciciosCategoriaPage({
   params,
@@ -85,8 +85,10 @@ export default async function EjerciciosCategoriaPage({
             id: ejercicio.id,
             titulo: ejercicio.titulo,
             cantidadPasos: ejercicio["pasos-ejercicio"]?.[0]?.count ?? 0,
-            marcadores: (posicionesPorEjercicio.get(ejercicio.id) ??
-              []) as unknown as Marcador[],
+            marcadores: (
+              (posicionesPorEjercicio.get(ejercicio.id) ??
+                []) as unknown as ElementoCancha[]
+            ).filter((elemento) => !esForma(elemento)) as Marcador[],
           }))}
         />
       )}

@@ -2,12 +2,13 @@
 
 import { Modal } from "@/components/modal";
 import { ReproductorEjercicio } from "@/components/cancha/reproductor-ejercicio";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
+import type { Forma, Marcador } from "@/components/cancha/cancha-tactica";
 
 type Paso = {
   id: string;
   nombre: string | null;
   marcadores: Marcador[];
+  formas: Forma[];
 };
 
 export function ModalReproducir({

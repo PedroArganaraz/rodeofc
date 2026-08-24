@@ -48,14 +48,13 @@ function TarjetaEntrenamiento({ entrenamiento }: { entrenamiento: Entrenamiento 
         />
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="font-medium text-neutral-900">{entrenamiento.titulo}</p>
-          <p className="mt-1 text-sm text-neutral-500">
-            {entrenamiento.cantidadEjercicios}{" "}
-            {entrenamiento.cantidadEjercicios === 1 ? "ejercicio" : "ejercicios"}
-          </p>
-        </div>
+      <p className="mb-3 font-medium text-neutral-900">{entrenamiento.titulo}</p>
+
+      <div className="flex items-end justify-between gap-2">
+        <p className="text-sm text-neutral-500">
+          {entrenamiento.cantidadEjercicios}{" "}
+          {entrenamiento.cantidadEjercicios === 1 ? "ejercicio" : "ejercicios"}
+        </p>
         <span className="flex shrink-0 items-center gap-1 rounded-xl border border-stone-300 px-2 py-1 text-sm font-medium text-neutral-900">
           <Pencil className="h-4 w-4" />
           Editar

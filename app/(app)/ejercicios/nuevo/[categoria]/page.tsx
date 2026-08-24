@@ -15,5 +15,10 @@ export default async function NuevoEjercicioPage({
 
   if (!encontrada) redirect("/ejercicios");
 
-  return <NuevoEjercicioView categoriaLabel={encontrada.label} />;
+  return (
+    <NuevoEjercicioView
+      categoriaSlug={encontrada.slug}
+      categoriaLabel={encontrada.label}
+    />
+  );
 }

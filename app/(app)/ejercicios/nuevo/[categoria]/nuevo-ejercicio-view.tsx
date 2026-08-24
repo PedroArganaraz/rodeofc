@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { EditorTactico } from "@/components/cancha/editor-tactico";
 import type { Marcador } from "@/components/cancha/cancha-tactica";
+import { crearEjercicio } from "./actions";
 
 type Paso = {
   id: string;
@@ -18,18 +20,39 @@ function crearId() {
 }
 
 export function NuevoEjercicioView({
+  categoriaSlug,
   categoriaLabel,
 }: {
+  categoriaSlug: string;
   categoriaLabel: string;
 }) {
+  const router = useRouter();
   const [titulo, setTitulo] = useState("");
   const [marcadores, setMarcadores] = useState<Marcador[]>([]);
   const [pasos, setPasos] = useState<Paso[]>([]);
   const [pasoCargadoId, setPasoCargadoId] = useState<string | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [valorEdicion, setValorEdicion] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const puedeGuardar = titulo.trim() !== "" && pasos.length > 0;
+
+  function handleGuardar() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await crearEjercicio(
+          titulo.trim(),
+          categoriaSlug,
+          pasos.map((paso) => ({ nombre: paso.nombre, marcadores: paso.marcadores })),
+        );
+        router.push(`/ejercicios/${categoriaSlug}`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Ocurrió un error");
+      }
+    });
+  }
 
   function handleAgregarPaso() {
     setPasos((prev) => [...prev, { id: crearId(), nombre: null, marcadores }]);
@@ -72,15 +95,21 @@ export function NuevoEjercicioView({
         />
         <button
           type="button"
-          disabled={!puedeGuardar}
+          onClick={handleGuardar}
+          disabled={!puedeGuardar || isPending}
           className="rounded-xl bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy-dark disabled:opacity-40"
         >
-          Guardar
+          {isPending ? "Guardando..." : "Guardar"}
         </button>
       </div>
-      <p className="mb-6 text-sm font-medium text-neutral-500">
+      <p className="mb-2 text-sm font-medium text-neutral-500">
         Categoría: {categoriaLabel}
       </p>
+      {error ? (
+        <p className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-500">
+          {error}
+        </p>
+      ) : null}
 
       <EditorTactico
         marcadores={marcadores}

@@ -34,10 +34,12 @@ export function EditorTactico({
   marcadores,
   onChange,
   accionesExtra,
+  accionesFinales,
 }: {
   marcadores: Marcador[];
   onChange: (marcadores: Marcador[]) => void;
   accionesExtra?: React.ReactNode;
+  accionesFinales?: React.ReactNode;
 }) {
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [historialPasado, setHistorialPasado] = useState<Marcador[][]>([]);
@@ -278,6 +280,8 @@ export function EditorTactico({
             </button>
           </div>
         </div>
+
+        {accionesFinales}
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { CATEGORIAS, type CategoriaEjercicio } from "../../categorias";
+import { obtenerPasosEjercicio } from "../../actions";
 import { EditorEjercicioView } from "@/components/ejercicios/editor-ejercicio-view";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
 
 export default async function EjercicioDetallePage({
   params,
@@ -40,17 +40,7 @@ export default async function EjercicioDetallePage({
 
   if (!ejercicio) notFound();
 
-  const { data: pasos } = await supabase
-    .from("pasos-ejercicio")
-    .select("id, nombre, posiciones")
-    .eq("ejercicio_id", ejercicio.id)
-    .order("orden");
-
-  const pasosIniciales = (pasos ?? []).map((paso) => ({
-    id: paso.id,
-    nombre: paso.nombre,
-    marcadores: (paso.posiciones ?? []) as unknown as Marcador[],
-  }));
+  const pasosIniciales = await obtenerPasosEjercicio(ejercicio.id);
 
   return (
     <EditorEjercicioView

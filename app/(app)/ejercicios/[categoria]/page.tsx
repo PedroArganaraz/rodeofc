@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { CATEGORIAS, type CategoriaEjercicio } from "../categorias";
+import { EjerciciosGrid } from "./ejercicios-grid";
 
 export default async function EjerciciosCategoriaPage({
   params,
@@ -56,26 +57,14 @@ export default async function EjerciciosCategoriaPage({
           Todavía no hay ejercicios de {encontrada.label.toLowerCase()}.
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-5">
-          {ejercicios.map((ejercicio) => {
-            const cantidadPasos = ejercicio["pasos-ejercicio"]?.[0]?.count ?? 0;
-
-            return (
-              <Link
-                key={ejercicio.id}
-                href={`/ejercicios/${encontrada.slug}/${ejercicio.id}`}
-                className="rounded-xl border border-stone-300 bg-white p-4 shadow-sm transition-colors hover:border-blue-500"
-              >
-                <p className="font-medium text-neutral-900">
-                  {ejercicio.titulo}
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  {cantidadPasos} {cantidadPasos === 1 ? "paso" : "pasos"}
-                </p>
-              </Link>
-            );
-          })}
-        </div>
+        <EjerciciosGrid
+          categoriaSlug={encontrada.slug}
+          ejercicios={ejercicios.map((ejercicio) => ({
+            id: ejercicio.id,
+            titulo: ejercicio.titulo,
+            cantidadPasos: ejercicio["pasos-ejercicio"]?.[0]?.count ?? 0,
+          }))}
+        />
       )}
     </div>
   );

@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { EditorTactico } from "@/components/cancha/editor-tactico";
 import { ConfirmModal } from "@/components/confirm-modal";
+import { ModalReproducir } from "@/components/ejercicios/modal-reproducir";
 import type { Marcador } from "@/components/cancha/cancha-tactica";
 import {
   crearEjercicio,
@@ -52,6 +54,7 @@ export function EditorEjercicioView({
   const [valorEdicion, setValorEdicion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [mostrarConfirmEliminar, setMostrarConfirmEliminar] = useState(false);
+  const [mostrarReproducir, setMostrarReproducir] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const puedeGuardar = titulo.trim() !== "" && pasos.length > 0;
@@ -113,6 +116,14 @@ export function EditorEjercicioView({
 
   return (
     <div className="w-full flex-1 p-6">
+      <Link
+        href={`/ejercicios/${categoriaSlug}`}
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Volver a {categoriaLabel.toLowerCase()}
+      </Link>
+
       <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <input
           type="text"
@@ -167,6 +178,18 @@ export function EditorEjercicioView({
             <Plus className="h-4 w-4" />
             Nuevo paso
           </button>
+        }
+        accionesFinales={
+          pasos.length >= 2 ? (
+            <button
+              type="button"
+              onClick={() => setMostrarReproducir(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-stone-100"
+            >
+              <Eye className="h-4 w-4" />
+              Ver
+            </button>
+          ) : null
         }
       />
 
@@ -257,6 +280,14 @@ export function EditorEjercicioView({
           description={`¿Eliminar ${titulo || "este ejercicio"}? Esta acción no se puede deshacer.`}
           onConfirm={handleEliminar}
           onClose={() => setMostrarConfirmEliminar(false)}
+        />
+      ) : null}
+
+      {mostrarReproducir ? (
+        <ModalReproducir
+          titulo={titulo || "Ejercicio"}
+          pasos={pasos}
+          onClose={() => setMostrarReproducir(false)}
         />
       ) : null}
     </div>

@@ -111,3 +111,21 @@ export async function eliminarEjercicio(ejercicioId: string) {
 
   if (error) throw new Error(error.message);
 }
+
+export async function obtenerPasosEjercicio(ejercicioId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("pasos-ejercicio")
+    .select("id, nombre, posiciones")
+    .eq("ejercicio_id", ejercicioId)
+    .order("orden");
+
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((paso) => ({
+    id: paso.id,
+    nombre: paso.nombre,
+    marcadores: (paso.posiciones ?? []) as unknown as Marcador[],
+  }));
+}

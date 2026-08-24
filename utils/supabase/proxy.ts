@@ -25,9 +25,6 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: avoid writing logic between createServerClient and
-  // getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -42,8 +39,5 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // IMPORTANT: return the supabaseResponse object as it is, or create
-  // a new response with `NextResponse.next({ request })` and copy over
-  // the cookies via `myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())`.
   return supabaseResponse;
 }

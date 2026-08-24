@@ -7,7 +7,7 @@ import { createClient } from "@/utils/supabase/client";
 import { createRival, updateRival } from "./actions";
 import type { Tables } from "@/types/database.types";
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const ACCEPTED_TYPES: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",

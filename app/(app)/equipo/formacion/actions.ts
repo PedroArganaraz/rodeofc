@@ -28,9 +28,6 @@ async function getFormacionId(equipoId: string) {
   return data?.[0]?.id ?? null;
 }
 
-// Crea la formación inicial (layout 2-3-1) la primera vez que el
-// equipo entra a la pantalla, si todavía no tiene ninguna fila en
-// "formaciones". Se llama directamente desde el Server Component.
 export async function asegurarFormacionInicial(equipoId: string) {
   const existente = await getFormacionId(equipoId);
   if (existente) return existente;

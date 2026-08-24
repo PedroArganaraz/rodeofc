@@ -3,7 +3,14 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, GripVertical, Plus, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Plus,
+  X,
+} from "lucide-react";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { CATEGORIAS } from "@/app/(app)/ejercicios/categorias";
 import {
@@ -48,6 +55,8 @@ export function EditorEntrenamientoView({
   const [isPending, startTransition] = useTransition();
   const [dragId, setDragId] = useState<string | null>(null);
   const filaRefs = useRef<Record<string, HTMLLIElement | null>>({});
+  const dragElRef = useRef<HTMLButtonElement | null>(null);
+  const dragPointerIdRef = useRef<number | null>(null);
 
   const puedeGuardar = titulo.trim() !== "" && seleccionados.length > 0;
 
@@ -64,16 +73,30 @@ export function EditorEntrenamientoView({
     setSeleccionados((prev) => prev.filter((item) => item !== id));
   }
 
+  function handleMover(indice: number, direccion: -1 | 1) {
+    setSeleccionados((prev) => {
+      const destino = indice + direccion;
+      if (destino < 0 || destino >= prev.length) return prev;
+      const copia = [...prev];
+      [copia[indice], copia[destino]] = [copia[destino], copia[indice]];
+      return copia;
+    });
+  }
+
   function handlePointerDownGrip(
     event: React.PointerEvent<HTMLButtonElement>,
     id: string,
   ) {
     event.currentTarget.setPointerCapture(event.pointerId);
+    dragElRef.current = event.currentTarget;
+    dragPointerIdRef.current = event.pointerId;
     setDragId(id);
   }
 
   useEffect(() => {
     if (!dragId) return;
+    const el = dragElRef.current;
+    if (!el) return;
 
     let finalizado = false;
 
@@ -104,6 +127,10 @@ export function EditorEntrenamientoView({
     function finalizar() {
       if (finalizado) return;
       finalizado = true;
+      const pointerId = dragPointerIdRef.current;
+      if (pointerId !== null && el!.hasPointerCapture(pointerId)) {
+        el!.releasePointerCapture(pointerId);
+      }
       setDragId(null);
     }
 
@@ -128,22 +155,20 @@ export function EditorEntrenamientoView({
       finalizar();
     }
 
-    window.addEventListener("pointermove", onPointerMoveNativo, { passive: false });
-    window.addEventListener("pointerup", onPointerUpNativo, { passive: false });
-    window.addEventListener("pointercancel", onPointerUpNativo, { passive: false });
-    window.addEventListener("pointerleave", onPointerUpNativo, { passive: false });
-    window.addEventListener("touchmove", onTouchMoveNativo, { passive: false });
-    window.addEventListener("touchend", onTouchEndNativo, { passive: false });
-    window.addEventListener("touchcancel", onTouchEndNativo, { passive: false });
+    el.addEventListener("pointermove", onPointerMoveNativo, { passive: false });
+    el.addEventListener("pointerup", onPointerUpNativo, { passive: false });
+    el.addEventListener("pointercancel", onPointerUpNativo, { passive: false });
+    el.addEventListener("touchmove", onTouchMoveNativo, { passive: false });
+    el.addEventListener("touchend", onTouchEndNativo, { passive: false });
+    el.addEventListener("touchcancel", onTouchEndNativo, { passive: false });
 
     return () => {
-      window.removeEventListener("pointermove", onPointerMoveNativo);
-      window.removeEventListener("pointerup", onPointerUpNativo);
-      window.removeEventListener("pointercancel", onPointerUpNativo);
-      window.removeEventListener("pointerleave", onPointerUpNativo);
-      window.removeEventListener("touchmove", onTouchMoveNativo);
-      window.removeEventListener("touchend", onTouchEndNativo);
-      window.removeEventListener("touchcancel", onTouchEndNativo);
+      el.removeEventListener("pointermove", onPointerMoveNativo);
+      el.removeEventListener("pointerup", onPointerUpNativo);
+      el.removeEventListener("pointercancel", onPointerUpNativo);
+      el.removeEventListener("touchmove", onTouchMoveNativo);
+      el.removeEventListener("touchend", onTouchEndNativo);
+      el.removeEventListener("touchcancel", onTouchEndNativo);
     };
   }, [dragId]);
 
@@ -314,7 +339,7 @@ export function EditorEntrenamientoView({
                         type="button"
                         onPointerDown={(event) => handlePointerDownGrip(event, id)}
                         aria-label={`Reordenar ${ejercicio.titulo}`}
-                        className="touch-none rounded-full p-2 text-neutral-400 hover:bg-stone-300 hover:text-neutral-900"
+                        className="touch-none hidden rounded-full p-2 text-neutral-400 hover:bg-stone-300 hover:text-neutral-900 lg:flex"
                       >
                         <GripVertical className="h-4 w-4" />
                       </button>
@@ -330,14 +355,36 @@ export function EditorEntrenamientoView({
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleQuitar(id)}
-                      aria-label={`Quitar ${ejercicio.titulo}`}
-                      className="shrink-0 rounded-full p-2 text-neutral-500 hover:bg-red-500/10 hover:text-red-500"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                    <div className="flex shrink-0 gap-1">
+                      <div className="flex gap-1 lg:hidden">
+                        <button
+                          type="button"
+                          onClick={() => handleMover(indice, -1)}
+                          disabled={indice === 0}
+                          aria-label={`Mover ${ejercicio.titulo} arriba`}
+                          className="rounded-full p-2 text-neutral-500 hover:bg-stone-300 hover:text-neutral-900 disabled:opacity-40"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMover(indice, 1)}
+                          disabled={indice === seleccionados.length - 1}
+                          aria-label={`Mover ${ejercicio.titulo} abajo`}
+                          className="rounded-full p-2 text-neutral-500 hover:bg-stone-300 hover:text-neutral-900 disabled:opacity-40"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleQuitar(id)}
+                        aria-label={`Quitar ${ejercicio.titulo}`}
+                        className="rounded-full p-2 text-neutral-500 hover:bg-red-500/10 hover:text-red-500"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </li>
                 );
               })}

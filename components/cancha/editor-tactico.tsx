@@ -33,9 +33,11 @@ function posicionPorDefecto(indice: number) {
 export function EditorTactico({
   marcadores,
   onChange,
+  accionesExtra,
 }: {
   marcadores: Marcador[];
   onChange: (marcadores: Marcador[]) => void;
+  accionesExtra?: React.ReactNode;
 }) {
   const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
   const [historialPasado, setHistorialPasado] = useState<Marcador[][]>([]);
@@ -218,6 +220,8 @@ export function EditorTactico({
         >
           Limpiar cancha
         </button>
+
+        {accionesExtra}
 
         {seleccionadoId ? (
           <button

@@ -260,6 +260,13 @@ export function CanchaTactica({
         const tipo = marcador.tipo ?? "jugador";
         const radioAnillo =
           tipo === "jugador" ? radioJugador + 1.2 : tipo === "pelota" ? 1.8 : 2;
+        // Área de toque más grande que la figura visible: con el dedo,
+        // el punto exacto donde arranca el touch rara vez cae justo
+        // sobre el círculo/ícono, y si el touchstart aterriza fuera de
+        // la zona con touch-action:none el navegador arranca un scroll
+        // en simultáneo con el drag. Este círculo invisible amplía esa
+        // zona sin bloquear el scroll en el resto de la cancha vacía.
+        const radioToque = radioAnillo + 2.5;
 
         return (
           <g
@@ -270,8 +277,17 @@ export function CanchaTactica({
               event.stopPropagation();
               onClickMarcador?.(marcador.id);
             }}
-            className={editable ? "touch-none cursor-grab" : undefined}
+            className={editable ? "cursor-grab" : undefined}
           >
+            {editable ? (
+              <circle
+                r={radioToque}
+                fill="transparent"
+                className="touch-none"
+                style={{ pointerEvents: "all" }}
+              />
+            ) : null}
+
             {seleccionadoId === marcador.id ? (
               <circle
                 r={radioAnillo}

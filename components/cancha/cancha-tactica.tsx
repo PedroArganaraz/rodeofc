@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ColorMarcador = "propio" | "rival";
 export type TipoMarcador = "jugador" | "pelota" | "cono";
@@ -17,10 +17,6 @@ export type Marcador = {
 
 export type Orientacion = "vertical" | "horizontal";
 
-// Formas reutilizables (cono/pelota), pensadas para un viewBox
-// cuadrado centrado en (0,0) de ~10x10 unidades -- se usan tanto
-// dentro de la cancha (ya dentro de un <g transform="translate(...)">)
-// como en los botones de la paleta (envueltas en su propio <svg>).
 export function ConoForma() {
   return (
     <>
@@ -121,19 +117,14 @@ function LineasCancha({
         <line x1={MARGEN} y1={height / 2} x2={width - MARGEN} y2={height / 2} />
         <circle cx={width / 2} cy={height / 2} r={9} />
         <circle cx={width / 2} cy={height / 2} r={0.6} className="fill-white/80" />
-        {/* área grande */}
         <rect x={(width - 40) / 2} y={MARGEN} width={40} height={16} />
         <rect x={(width - 40) / 2} y={height - MARGEN - 16} width={40} height={16} />
-        {/* área chica */}
         <rect x={(width - 20) / 2} y={MARGEN} width={20} height={6} />
         <rect x={(width - 20) / 2} y={height - MARGEN - 6} width={20} height={6} />
-        {/* punto penal */}
         <circle cx={width / 2} cy={MARGEN + 11} r={0.6} className="fill-white/80" />
         <circle cx={width / 2} cy={height - MARGEN - 11} r={0.6} className="fill-white/80" />
-        {/* arcos */}
         <rect x={(width - 8) / 2} y={0} width={8} height={MARGEN} />
         <rect x={(width - 8) / 2} y={height - MARGEN} width={8} height={MARGEN} />
-        {/* banderines de córner */}
         <path d={`M ${MARGEN} ${MARGEN + 3} A 3 3 0 0 1 ${MARGEN + 3} ${MARGEN}`} />
         <path d={`M ${width - MARGEN - 3} ${MARGEN} A 3 3 0 0 1 ${width - MARGEN} ${MARGEN + 3}`} />
         <path d={`M ${width - MARGEN} ${height - MARGEN - 3} A 3 3 0 0 1 ${width - MARGEN - 3} ${height - MARGEN}`} />
@@ -148,19 +139,14 @@ function LineasCancha({
       <line x1={width / 2} y1={MARGEN} x2={width / 2} y2={height - MARGEN} />
       <circle cx={width / 2} cy={height / 2} r={9} />
       <circle cx={width / 2} cy={height / 2} r={0.6} className="fill-white/80" />
-      {/* área grande */}
       <rect x={MARGEN} y={(height - 40) / 2} width={16} height={40} />
       <rect x={width - MARGEN - 16} y={(height - 40) / 2} width={16} height={40} />
-      {/* área chica */}
       <rect x={MARGEN} y={(height - 20) / 2} width={6} height={20} />
       <rect x={width - MARGEN - 6} y={(height - 20) / 2} width={6} height={20} />
-      {/* punto penal */}
       <circle cx={MARGEN + 11} cy={height / 2} r={0.6} className="fill-white/80" />
       <circle cx={width - MARGEN - 11} cy={height / 2} r={0.6} className="fill-white/80" />
-      {/* arcos */}
       <rect x={0} y={(height - 8) / 2} width={MARGEN} height={8} />
       <rect x={width - MARGEN} y={(height - 8) / 2} width={MARGEN} height={8} />
-      {/* banderines de córner */}
       <path d={`M ${MARGEN + 3} ${MARGEN} A 3 3 0 0 1 ${MARGEN} ${MARGEN + 3}`} />
       <path d={`M ${width - MARGEN} ${MARGEN + 3} A 3 3 0 0 1 ${width - MARGEN - 3} ${MARGEN}`} />
       <path d={`M ${width - MARGEN - 3} ${height - MARGEN} A 3 3 0 0 1 ${width - MARGEN} ${height - MARGEN - 3}`} />
@@ -187,12 +173,13 @@ export function CanchaTactica({
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const estadoDragRef = useRef({ dragId, dragPos });
+  useEffect(() => {
+    estadoDragRef.current = { dragId, dragPos };
+  }, [dragId, dragPos]);
 
   const width = orientacion === "vertical" ? 60 : 100;
   const height = orientacion === "vertical" ? 100 : 60;
-  // En horizontal (vista de escritorio) el contenedor renderizado es
-  // bastante más grande, así que un jugador un poco más chico en
-  // unidades del viewBox mantiene un tamaño en pantalla proporcionado.
   const radioJugador = orientacion === "horizontal" ? 2.4 : RADIO_MARCADOR;
 
   const getPuntoDisplay = useCallback(
@@ -220,20 +207,69 @@ export function CanchaTactica({
     setDragId(id);
   }
 
-  function handlePointerMove(event: React.PointerEvent<SVGSVGElement>) {
+  useEffect(() => {
     if (!dragId) return;
-    const punto = getPuntoDisplay(event.clientX, event.clientY);
-    if (punto) setDragPos(punto);
-  }
+    const svg = svgRef.current;
+    if (!svg) return;
 
-  function handlePointerUp() {
-    if (dragId && dragPos) {
-      const canonico = aCanonico(dragPos.x, dragPos.y, orientacion);
-      onMoverMarcador?.(dragId, canonico.x, canonico.y);
+    let finalizado = false;
+
+    function mover(clientX: number, clientY: number) {
+      const punto = getPuntoDisplay(clientX, clientY);
+      if (punto) setDragPos(punto);
     }
-    setDragId(null);
-    setDragPos(null);
-  }
+
+    function finalizar() {
+      if (finalizado) return;
+      finalizado = true;
+      const actual = estadoDragRef.current;
+      if (actual.dragId && actual.dragPos) {
+        const canonico = aCanonico(actual.dragPos.x, actual.dragPos.y, orientacion);
+        onMoverMarcador?.(actual.dragId, canonico.x, canonico.y);
+      }
+      setDragId(null);
+      setDragPos(null);
+    }
+
+    function onPointerMoveNativo(event: PointerEvent) {
+      event.preventDefault();
+      mover(event.clientX, event.clientY);
+    }
+
+    function onPointerUpNativo(event: PointerEvent) {
+      event.preventDefault();
+      finalizar();
+    }
+
+    function onTouchMoveNativo(event: TouchEvent) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      if (touch) mover(touch.clientX, touch.clientY);
+    }
+
+    function onTouchEndNativo(event: TouchEvent) {
+      event.preventDefault();
+      finalizar();
+    }
+
+    svg.addEventListener("pointermove", onPointerMoveNativo, { passive: false });
+    svg.addEventListener("pointerup", onPointerUpNativo, { passive: false });
+    svg.addEventListener("pointercancel", onPointerUpNativo, { passive: false });
+    svg.addEventListener("pointerleave", onPointerUpNativo, { passive: false });
+    svg.addEventListener("touchmove", onTouchMoveNativo, { passive: false });
+    svg.addEventListener("touchend", onTouchEndNativo, { passive: false });
+    svg.addEventListener("touchcancel", onTouchEndNativo, { passive: false });
+
+    return () => {
+      svg.removeEventListener("pointermove", onPointerMoveNativo);
+      svg.removeEventListener("pointerup", onPointerUpNativo);
+      svg.removeEventListener("pointercancel", onPointerUpNativo);
+      svg.removeEventListener("pointerleave", onPointerUpNativo);
+      svg.removeEventListener("touchmove", onTouchMoveNativo);
+      svg.removeEventListener("touchend", onTouchEndNativo);
+      svg.removeEventListener("touchcancel", onTouchEndNativo);
+    };
+  }, [dragId, getPuntoDisplay, onMoverMarcador, orientacion]);
 
   return (
     <svg
@@ -242,9 +278,6 @@ export function CanchaTactica({
       className={`w-full select-none rounded-xl bg-field-green ${
         orientacion === "vertical" ? "aspect-[60/100]" : "aspect-[100/60]"
       }`}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
     >
       <LineasCancha width={width} height={height} orientacion={orientacion} />
 
@@ -260,12 +293,6 @@ export function CanchaTactica({
         const tipo = marcador.tipo ?? "jugador";
         const radioAnillo =
           tipo === "jugador" ? radioJugador + 1.2 : tipo === "pelota" ? 1.8 : 2;
-        // Área de toque más grande que la figura visible: con el dedo,
-        // el punto exacto donde arranca el touch rara vez cae justo
-        // sobre el círculo/ícono, y si el touchstart aterriza fuera de
-        // la zona con touch-action:none el navegador arranca un scroll
-        // en simultáneo con el drag. Este círculo invisible amplía esa
-        // zona sin bloquear el scroll en el resto de la cancha vacía.
         const radioToque = radioAnillo + 2.5;
 
         return (

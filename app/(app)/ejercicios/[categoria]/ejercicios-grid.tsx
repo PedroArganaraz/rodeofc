@@ -60,7 +60,7 @@ export function EjerciciosGrid({
           }}
           className="cursor-pointer rounded-xl border border-stone-300 bg-white p-4 shadow-sm transition-colors hover:border-blue-500"
         >
-          <div className="mb-3 max-w-40">
+          <div className="mb-3 max-w-40 mx-auto">
             <CanchaTactica
               marcadores={ejercicio.marcadores}
               orientacion="horizontal"

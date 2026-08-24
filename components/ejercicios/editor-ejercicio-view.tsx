@@ -152,7 +152,7 @@ export function EditorEjercicioView({
             {isPending
               ? "Guardando..."
               : modoEdicion
-                ? "Guardar cambios"
+                ? "Guardar"
                 : "Guardar"}
           </button>
         </div>

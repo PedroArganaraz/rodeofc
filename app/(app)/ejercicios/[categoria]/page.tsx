@@ -4,7 +4,7 @@ import { ArrowLeft, Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { CATEGORIAS, type CategoriaEjercicio } from "../categorias";
 import { EjerciciosGrid } from "./ejercicios-grid";
-import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/cancha-tactica";
+import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/elementos";
 
 export default async function EjerciciosCategoriaPage({
   params,

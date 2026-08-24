@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { EntrenamientosGrid } from "./entrenamientos-grid";
-import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/cancha-tactica";
+import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/elementos";
 
 export default async function EntrenamientosPage() {
   const supabase = await createClient();

@@ -2,12 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import type { Json, TablesInsert } from "@/types/database.types";
-import {
-  esForma,
-  type ElementoCancha,
-  type Forma,
-  type Marcador,
-} from "@/components/cancha/cancha-tactica";
+import { esForma, type ElementoCancha, type Forma, type Marcador } from "@/components/cancha/elementos";
 
 export type PasoInput = {
   nombre: string | null;

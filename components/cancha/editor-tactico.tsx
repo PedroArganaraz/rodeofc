@@ -233,14 +233,14 @@ export function EditorTactico({
 
         <div className="rounded-xl border border-stone-300 bg-white p-4">
           <h3 className="mb-3 text-sm font-medium text-neutral-500">
-            Jugadores
+            Elementos
           </h3>
-          <div className="flex justify-center gap-6">
+          <div className="flex items-center justify-center gap-2">
             <button
               type="button"
               disabled={proximoPropio === null}
               onClick={() => proximoPropio && agregarJugador(proximoPropio, "propio")}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white disabled:bg-stone-300 disabled:text-neutral-500"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white disabled:bg-stone-300 disabled:text-neutral-500"
             >
               {proximoPropio ?? "–"}
             </button>
@@ -248,25 +248,17 @@ export function EditorTactico({
               type="button"
               disabled={proximoRival === null}
               onClick={() => proximoRival && agregarJugador(proximoRival, "rival")}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 font-mono text-sm font-medium text-white disabled:bg-stone-300 disabled:text-neutral-500"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500 font-mono text-sm font-medium text-white disabled:bg-stone-300 disabled:text-neutral-500"
             >
               {proximoRival ?? "–"}
             </button>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-stone-300 bg-white p-4">
-          <h3 className="mb-3 text-sm font-medium text-neutral-500">
-            Elementos
-          </h3>
-          <div className="flex items-center justify-center gap-4">
             <button
               type="button"
               onClick={agregarCono}
               aria-label="Agregar cono"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
             >
-              <svg viewBox="-5 -5 10 10" className="h-10 w-10">
+              <svg viewBox="-5 -5 10 10" className="h-9 w-9">
                 <ConoForma />
               </svg>
             </button>
@@ -274,9 +266,9 @@ export function EditorTactico({
               type="button"
               onClick={agregarPelota}
               aria-label="Agregar pelota"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
             >
-              <svg viewBox="-5 -5 10 10" className="h-10 w-10">
+              <svg viewBox="-5 -5 10 10" className="h-9 w-9">
                 <PelotaForma />
               </svg>
             </button>

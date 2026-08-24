@@ -108,7 +108,7 @@ function LineasCancha({
   orientacion: Orientacion;
 }) {
   const stroke = "stroke-white/80";
-  const strokeWidth = 0.5;
+  const strokeWidth = 0.25;
 
   if (orientacion === "vertical") {
     return (

@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { CATEGORIAS, type CategoriaEjercicio } from "../categorias";
 import { EjerciciosGrid } from "./ejercicios-grid";
+import type { Marcador } from "@/components/cancha/cancha-tactica";
 
 export default async function EjerciciosCategoriaPage({
   params,
@@ -40,6 +41,20 @@ export default async function EjerciciosCategoriaPage({
         .order("created_at", { ascending: false })
     : { data: null };
 
+  const ejercicioIds = (ejercicios ?? []).map((ejercicio) => ejercicio.id);
+
+  const { data: primerosPasos } = ejercicioIds.length
+    ? await supabase
+        .from("pasos-ejercicio")
+        .select("ejercicio_id, posiciones")
+        .in("ejercicio_id", ejercicioIds)
+        .eq("orden", 1)
+    : { data: null };
+
+  const posicionesPorEjercicio = new Map(
+    (primerosPasos ?? []).map((paso) => [paso.ejercicio_id, paso.posiciones]),
+  );
+
   return (
     <div className="flex w-full flex-1 flex-col">
       <div className="flex justify-end p-6 pb-0">
@@ -63,6 +78,8 @@ export default async function EjerciciosCategoriaPage({
             id: ejercicio.id,
             titulo: ejercicio.titulo,
             cantidadPasos: ejercicio["pasos-ejercicio"]?.[0]?.count ?? 0,
+            marcadores: (posicionesPorEjercicio.get(ejercicio.id) ??
+              []) as unknown as Marcador[],
           }))}
         />
       )}

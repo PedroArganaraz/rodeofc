@@ -162,6 +162,7 @@ export function CanchaTactica({
   onMoverMarcador,
   onClickMarcador,
   seleccionadoId,
+  variante = "completa",
 }: {
   marcadores: Marcador[];
   orientacion: Orientacion;
@@ -169,7 +170,9 @@ export function CanchaTactica({
   onMoverMarcador?: (id: string, x: number, y: number) => void;
   onClickMarcador?: (id: string) => void;
   seleccionadoId?: string;
+  variante?: "completa" | "mini";
 }) {
+  const esMini = variante === "mini";
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
@@ -335,18 +338,20 @@ export function CanchaTactica({
             ) : (
               <>
                 <circle r={radioJugador} className={colorClase} />
-                <text
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fontSize={radioJugador}
-                  className="fill-white font-mono"
-                >
-                  {marcador.numero}
-                </text>
+                {esMini ? null : (
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={radioJugador}
+                    className="fill-white font-mono"
+                  >
+                    {marcador.numero}
+                  </text>
+                )}
               </>
             )}
 
-            {tipo === "jugador" && marcador.etiqueta ? (
+            {!esMini && tipo === "jugador" && marcador.etiqueta ? (
               <text
                 y={radioJugador + 3}
                 textAnchor="middle"

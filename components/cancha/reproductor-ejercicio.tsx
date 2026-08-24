@@ -74,9 +74,9 @@ export function ReproductorEjercicio({ pasos }: { pasos: Paso[] }) {
   }
 
   function handleReiniciar() {
-    setReproduciendo(false);
     setPasoIndex(0);
     setProgreso(0);
+    setReproduciendo(pasos.length > 1);
   }
 
   if (pasos.length === 0) {

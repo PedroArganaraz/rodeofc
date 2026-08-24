@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { ModalReproducir } from "@/components/ejercicios/modal-reproducir";
 import { obtenerPasosEjercicio } from "../actions";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
+import { CanchaTactica, type Marcador } from "@/components/cancha/cancha-tactica";
 
 type Paso = {
   id: string;
@@ -17,6 +17,7 @@ type Ejercicio = {
   id: string;
   titulo: string;
   cantidadPasos: number;
+  marcadores: Marcador[];
 };
 
 export function EjerciciosGrid({
@@ -59,6 +60,14 @@ export function EjerciciosGrid({
           }}
           className="cursor-pointer rounded-xl border border-stone-300 bg-white p-4 shadow-sm transition-colors hover:border-blue-500"
         >
+          <div className="mb-3 max-w-40">
+            <CanchaTactica
+              marcadores={ejercicio.marcadores}
+              orientacion="horizontal"
+              variante="mini"
+            />
+          </div>
+
           <div className="flex items-center justify-between gap-2">
             <div>
               <p className="font-medium text-neutral-900">{ejercicio.titulo}</p>

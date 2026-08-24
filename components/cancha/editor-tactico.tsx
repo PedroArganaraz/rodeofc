@@ -10,7 +10,11 @@ import {
   type Marcador,
 } from "./cancha-tactica";
 
-const NUMEROS = ["1", "2", "6", "7", "9", "10", "11"];
+const SECUENCIA_NUMEROS = ["10", "11", "9", "7", "6", "2", "1"];
+
+function proximoDisponible(enCancha: Set<string>): string | null {
+  return SECUENCIA_NUMEROS.find((numero) => !enCancha.has(numero)) ?? null;
+}
 
 function crearId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -47,6 +51,9 @@ export function EditorTactico({
       .filter((m) => (m.tipo ?? "jugador") === "jugador" && m.color === "rival")
       .map((m) => m.numero),
   );
+
+  const proximoPropio = proximoDisponible(numerosPropiosEnCancha);
+  const proximoRival = proximoDisponible(numerosRivalesEnCancha);
 
   function aplicarCambio(nuevo: Marcador[]) {
     setHistorialPasado((prev) => [...prev, marcadores]);
@@ -226,63 +233,54 @@ export function EditorTactico({
 
         <div className="rounded-xl border border-stone-300 bg-white p-4">
           <h3 className="mb-3 text-sm font-medium text-neutral-500">
-            Jugadores propios
+            Jugadores
           </h3>
-          <div className="grid grid-cols-4 gap-2">
-            {NUMEROS.map((numero) => (
-              <button
-                key={numero}
-                type="button"
-                disabled={numerosPropiosEnCancha.has(numero)}
-                onClick={() => agregarJugador(numero, "propio")}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white disabled:opacity-30"
-              >
-                {numero}
-              </button>
-            ))}
+          <div className="flex justify-center gap-6">
+            <button
+              type="button"
+              disabled={proximoPropio === null}
+              onClick={() => proximoPropio && agregarJugador(proximoPropio, "propio")}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white disabled:bg-stone-300 disabled:text-neutral-500"
+            >
+              {proximoPropio ?? "–"}
+            </button>
+            <button
+              type="button"
+              disabled={proximoRival === null}
+              onClick={() => proximoRival && agregarJugador(proximoRival, "rival")}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 font-mono text-sm font-medium text-white disabled:bg-stone-300 disabled:text-neutral-500"
+            >
+              {proximoRival ?? "–"}
+            </button>
           </div>
         </div>
 
         <div className="rounded-xl border border-stone-300 bg-white p-4">
           <h3 className="mb-3 text-sm font-medium text-neutral-500">
-            Jugadores rivales
+            Elementos
           </h3>
-          <div className="grid grid-cols-4 gap-2">
-            {NUMEROS.map((numero) => (
-              <button
-                key={numero}
-                type="button"
-                disabled={numerosRivalesEnCancha.has(numero)}
-                onClick={() => agregarJugador(numero, "rival")}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 font-mono text-sm font-medium text-white disabled:opacity-30"
-              >
-                {numero}
-              </button>
-            ))}
+          <div className="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={agregarCono}
+              aria-label="Agregar cono"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
+            >
+              <svg viewBox="-5 -5 10 10" className="h-10 w-10">
+                <ConoForma />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={agregarPelota}
+              aria-label="Agregar pelota"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
+            >
+              <svg viewBox="-5 -5 10 10" className="h-10 w-10">
+                <PelotaForma />
+              </svg>
+            </button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-4 rounded-xl border border-stone-300 bg-white p-4">
-          <button
-            type="button"
-            onClick={agregarCono}
-            aria-label="Agregar cono"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
-          >
-            <svg viewBox="-5 -5 10 10" className="h-10 w-10">
-              <ConoForma />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={agregarPelota}
-            aria-label="Agregar pelota"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-stone-100"
-          >
-            <svg viewBox="-5 -5 10 10" className="h-10 w-10">
-              <PelotaForma />
-            </svg>
-          </button>
         </div>
       </div>
     </div>

@@ -1,0 +1,1 @@
+alter table "pasos-ejercicio" add column posiciones jsonb not null default '[]'::jsonb;

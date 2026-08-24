@@ -87,7 +87,10 @@ export function FormacionView({
   }
 
   return (
-    <div className="w-full flex-1 p-6">
+    <div
+      onClick={() => setSeleccionadoId(null)}
+      className="w-full flex-1 p-6"
+    >
       {error ? (
         <p className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-500">
           {error}

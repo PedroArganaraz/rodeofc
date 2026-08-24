@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 
 export type ColorMarcador = "propio" | "rival";
+export type TipoMarcador = "jugador" | "pelota" | "cono";
 
 export type Marcador = {
   id: string;
@@ -11,9 +12,56 @@ export type Marcador = {
   numero: string;
   color: ColorMarcador;
   etiqueta?: string;
+  tipo?: TipoMarcador;
 };
 
 export type Orientacion = "vertical" | "horizontal";
+
+// Formas reutilizables (cono/pelota), pensadas para un viewBox
+// cuadrado centrado en (0,0) de ~10x10 unidades -- se usan tanto
+// dentro de la cancha (ya dentro de un <g transform="translate(...)">)
+// como en los botones de la paleta (envueltas en su propio <svg>).
+export function ConoForma() {
+  return (
+    <>
+      <ellipse
+        cx="0"
+        cy="3.4"
+        rx="3.4"
+        ry="0.9"
+        className="fill-amber-500 stroke-neutral-900"
+        strokeWidth={0.3}
+      />
+      <polygon
+        points="-2.1,3.4 2.1,3.4 0.6,-3.6 -0.6,-3.6"
+        className="fill-amber-500 stroke-neutral-900"
+        strokeWidth={0.3}
+        strokeLinejoin="round"
+      />
+      <polygon
+        points="-1.5,1.2 1.5,1.2 1.2,0.2 -1.2,0.2"
+        className="fill-white"
+      />
+      <ellipse cx="0" cy="-3.6" rx="0.6" ry="0.22" className="fill-amber-600" />
+    </>
+  );
+}
+
+export function PelotaForma() {
+  return (
+    <>
+      <circle
+        r={2.1}
+        className="fill-white stroke-neutral-900"
+        strokeWidth={0.35}
+      />
+      <polygon
+        points="0,-1 0.86,-0.28 0.53,0.73 -0.53,0.73 -0.86,-0.28"
+        className="fill-neutral-900"
+      />
+    </>
+  );
+}
 
 const RADIO_MARCADOR = 3;
 const MARGEN = 2;
@@ -179,13 +227,17 @@ export function CanchaTactica({
         const cy = (disp.y / 100) * height;
         const colorClase =
           marcador.color === "propio" ? "fill-blue-500" : "fill-red-500";
+        const tipo = marcador.tipo ?? "jugador";
 
         return (
           <g
             key={marcador.id}
             transform={`translate(${cx}, ${cy})`}
             onPointerDown={(event) => handlePointerDown(event, marcador.id)}
-            onClick={() => onClickMarcador?.(marcador.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onClickMarcador?.(marcador.id);
+            }}
             className={editable ? "touch-none cursor-grab" : undefined}
           >
             {seleccionadoId === marcador.id ? (
@@ -196,16 +248,26 @@ export function CanchaTactica({
                 strokeWidth={0.8}
               />
             ) : null}
-            <circle r={RADIO_MARCADOR} className={colorClase} />
-            <text
-              textAnchor="middle"
-              dominantBaseline="central"
-              fontSize={RADIO_MARCADOR}
-              className="fill-white font-mono"
-            >
-              {marcador.numero}
-            </text>
-            {marcador.etiqueta ? (
+
+            {tipo === "pelota" ? (
+              <PelotaForma />
+            ) : tipo === "cono" ? (
+              <ConoForma />
+            ) : (
+              <>
+                <circle r={RADIO_MARCADOR} className={colorClase} />
+                <text
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={RADIO_MARCADOR}
+                  className="fill-white font-mono"
+                >
+                  {marcador.numero}
+                </text>
+              </>
+            )}
+
+            {tipo === "jugador" && marcador.etiqueta ? (
               <text
                 y={RADIO_MARCADOR + 3}
                 textAnchor="middle"

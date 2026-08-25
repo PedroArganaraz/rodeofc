@@ -2,6 +2,12 @@
 
 import { createClient } from "@/utils/supabase/server";
 import type { TablesInsert } from "@/types/database.types";
+import {
+  esForma,
+  type ElementoCancha,
+  type Forma,
+  type Marcador,
+} from "@/components/cancha/elementos";
 
 export type EjercicioEntrenamientoInput = {
   ejercicio_id: string;
@@ -108,4 +114,61 @@ export async function eliminarEntrenamiento(entrenamientoId: string) {
     .eq("id", entrenamientoId);
 
   if (error) throw new Error(error.message);
+}
+
+export async function obtenerEjerciciosConPasos(entrenamientoId: string) {
+  const supabase = await createClient();
+
+  const { data: filas, error: filasError } = await supabase
+    .from("entrenamientos-ejercicios")
+    .select("ejercicio_id, orden")
+    .eq("entrenamiento_id", entrenamientoId)
+    .order("orden");
+
+  if (filasError) throw new Error(filasError.message);
+
+  const ejercicioIds = (filas ?? []).map((fila) => fila.ejercicio_id);
+  if (ejercicioIds.length === 0) return [];
+
+  const { data: ejercicios, error: ejerciciosError } = await supabase
+    .from("ejercicios")
+    .select("id, titulo")
+    .in("id", ejercicioIds);
+
+  if (ejerciciosError) throw new Error(ejerciciosError.message);
+
+  const { data: pasos, error: pasosError } = await supabase
+    .from("pasos-ejercicio")
+    .select("id, nombre, posiciones, ejercicio_id")
+    .in("ejercicio_id", ejercicioIds)
+    .order("orden");
+
+  if (pasosError) throw new Error(pasosError.message);
+
+  const tituloPorEjercicio = new Map(
+    (ejercicios ?? []).map((ejercicio) => [ejercicio.id, ejercicio.titulo]),
+  );
+
+  const pasosPorEjercicio = new Map<
+    string,
+    { id: string; nombre: string | null; marcadores: Marcador[]; formas: Forma[] }[]
+  >();
+
+  for (const paso of pasos ?? []) {
+    const elementos = (paso.posiciones ?? []) as unknown as ElementoCancha[];
+    const lista = pasosPorEjercicio.get(paso.ejercicio_id) ?? [];
+    lista.push({
+      id: paso.id,
+      nombre: paso.nombre,
+      marcadores: elementos.filter((elemento) => !esForma(elemento)) as Marcador[],
+      formas: elementos.filter(esForma),
+    });
+    pasosPorEjercicio.set(paso.ejercicio_id, lista);
+  }
+
+  return ejercicioIds.map((ejercicioId) => ({
+    id: ejercicioId,
+    titulo: tituloPorEjercicio.get(ejercicioId) ?? "",
+    pasos: pasosPorEjercicio.get(ejercicioId) ?? [],
+  }));
 }

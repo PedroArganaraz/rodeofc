@@ -49,10 +49,18 @@ function interpolarFormas(origen: Paso, destino: Paso, t: number): Forma[] {
   });
 }
 
-export function ReproductorEjercicio({ pasos }: { pasos: Paso[] }) {
+export function ReproductorEjercicio({
+  pasos,
+  autoplayInicial = true,
+}: {
+  pasos: Paso[];
+  autoplayInicial?: boolean;
+}) {
   const [pasoIndex, setPasoIndex] = useState(0);
   const [progreso, setProgreso] = useState(0);
-  const [reproduciendo, setReproduciendo] = useState(pasos.length > 1);
+  const [reproduciendo, setReproduciendo] = useState(
+    autoplayInicial && pasos.length > 1,
+  );
 
   const hayPasoSiguiente = pasoIndex < pasos.length - 1;
 

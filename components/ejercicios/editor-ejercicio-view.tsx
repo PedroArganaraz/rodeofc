@@ -297,6 +297,7 @@ export function EditorEjercicioView({
         onChange={setMarcadores}
         formas={formas}
         onChangeFormas={setFormas}
+        categoria={categoriaSlug}
         mostrarTrayectorias
         marcadoresReferencia={referencia}
         accionesExtra={

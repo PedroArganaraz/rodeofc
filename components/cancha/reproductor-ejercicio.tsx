@@ -99,6 +99,20 @@ export function ReproductorEjercicio({
     setReproduciendo((valor) => !valor);
   }
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.code !== "Space") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.tagName === "BUTTON") return;
+      event.preventDefault();
+      handlePlayPausa();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hayPasoSiguiente]);
+
   function handleReiniciar() {
     setPasoIndex(0);
     setProgreso(0);

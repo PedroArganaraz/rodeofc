@@ -1,6 +1,11 @@
-import { ArrowLeftRight, Footprints, Route, Target } from "lucide-react";
+import { ArrowLeftRight, Footprints, Hand, Route, Target } from "lucide-react";
 
-export type CategoriaEjercicio = "pases" | "tecnica" | "definicion" | "jugada";
+export type CategoriaEjercicio =
+  | "pases"
+  | "tecnica"
+  | "definicion"
+  | "jugada"
+  | "arqueras";
 
 export const CATEGORIAS: {
   slug: CategoriaEjercicio;
@@ -11,4 +16,5 @@ export const CATEGORIAS: {
   { slug: "tecnica", label: "Técnica", icon: Footprints },
   { slug: "definicion", label: "Definición", icon: Target },
   { slug: "jugada", label: "Jugada", icon: Route },
+  { slug: "arqueras", label: "Arqueras", icon: Hand },
 ];

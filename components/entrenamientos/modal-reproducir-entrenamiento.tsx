@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Modal } from "@/components/modal";
 import { ReproductorEjercicio } from "@/components/cancha/reproductor-ejercicio";
@@ -31,6 +31,29 @@ export function ModalReproducirEntrenamiento({
   const [indice, setIndice] = useState(indiceInicial);
   const ejercicioActual = ejercicios[indice];
 
+  function irAnterior() {
+    setIndice((actual) => Math.max(0, actual - 1));
+  }
+
+  function irSiguiente() {
+    setIndice((actual) => Math.min(ejercicios.length - 1, actual + 1));
+  }
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setIndice((actual) => Math.max(0, actual - 1));
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setIndice((actual) => Math.min(ejercicios.length - 1, actual + 1));
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [ejercicios.length]);
+
   if (!ejercicioActual) return null;
 
   return (
@@ -46,7 +69,7 @@ export function ModalReproducirEntrenamiento({
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => setIndice((actual) => actual - 1)}
+          onClick={irAnterior}
           disabled={indice === 0}
           aria-label="Ejercicio anterior"
           className="shrink-0 rounded-full bg-brand-navy p-2 text-white hover:bg-brand-navy-dark disabled:opacity-40"
@@ -63,7 +86,7 @@ export function ModalReproducirEntrenamiento({
 
         <button
           type="button"
-          onClick={() => setIndice((actual) => actual + 1)}
+          onClick={irSiguiente}
           disabled={indice === ejercicios.length - 1}
           aria-label="Ejercicio siguiente"
           className="shrink-0 rounded-full bg-brand-navy p-2 text-white hover:bg-brand-navy-dark disabled:opacity-40"

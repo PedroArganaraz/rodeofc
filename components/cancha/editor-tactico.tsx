@@ -20,9 +20,15 @@ import {
 } from "./cancha-tactica";
 
 const SECUENCIA_NUMEROS = ["10", "11", "9", "7", "6", "2", "1"];
+const SECUENCIA_NUMEROS_ARQUERAS = [...SECUENCIA_NUMEROS].reverse();
 
-function proximoDisponible(enCancha: Set<string>): string | null {
-  return SECUENCIA_NUMEROS.find((numero) => !enCancha.has(numero)) ?? null;
+function proximoDisponible(
+  enCancha: Set<string>,
+  categoria?: string,
+): string | null {
+  const secuencia =
+    categoria === "arqueras" ? SECUENCIA_NUMEROS_ARQUERAS : SECUENCIA_NUMEROS;
+  return secuencia.find((numero) => !enCancha.has(numero)) ?? null;
 }
 
 function crearId() {
@@ -46,6 +52,7 @@ export function EditorTactico({
   onChange,
   formas = [],
   onChangeFormas,
+  categoria,
   accionesExtra,
   accionesFinales,
   mostrarTrayectorias = false,
@@ -55,6 +62,7 @@ export function EditorTactico({
   onChange: (marcadores: Marcador[]) => void;
   formas?: Forma[];
   onChangeFormas?: (formas: Forma[]) => void;
+  categoria?: string;
   accionesExtra?: React.ReactNode;
   accionesFinales?: React.ReactNode;
   mostrarTrayectorias?: boolean;
@@ -79,8 +87,8 @@ export function EditorTactico({
       .map((m) => m.numero),
   );
 
-  const proximoPropio = proximoDisponible(numerosPropiosEnCancha);
-  const proximoRival = proximoDisponible(numerosRivalesEnCancha);
+  const proximoPropio = proximoDisponible(numerosPropiosEnCancha, categoria);
+  const proximoRival = proximoDisponible(numerosRivalesEnCancha, categoria);
 
   function aplicarCambio(cambio: { marcadores?: Marcador[]; formas?: Forma[] }) {
     setHistorialPasado((prev) => [...prev, { marcadores, formas }]);

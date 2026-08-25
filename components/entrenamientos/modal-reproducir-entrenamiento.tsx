@@ -58,7 +58,6 @@ export function ModalReproducirEntrenamiento({
           <ReproductorEjercicio
             key={ejercicioActual.id}
             pasos={ejercicioActual.pasos}
-            autoplayInicial={false}
           />
         </div>
 

@@ -26,6 +26,7 @@ import {
 type Paso = {
   id: string;
   nombre: string | null;
+  letra: string;
   marcadores: Marcador[];
   formas: Forma[];
 };
@@ -34,6 +35,24 @@ function crearId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);
+}
+
+function indiceALetra(indice: number): string {
+  let n = indice;
+  let letra = "";
+  do {
+    letra = String.fromCharCode(65 + (n % 26)) + letra;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return letra;
+}
+
+function letraAIndice(letra: string): number {
+  let n = 0;
+  for (const caracter of letra) {
+    n = n * 26 + (caracter.charCodeAt(0) - 64);
+  }
+  return n - 1;
 }
 
 export function EditorEjercicioView({
@@ -60,6 +79,11 @@ export function EditorEjercicioView({
     pasosIniciales?.[0]?.formas ?? [],
   );
   const [pasos, setPasos] = useState<Paso[]>(pasosIniciales ?? []);
+  const [proximoIndiceLetra, setProximoIndiceLetra] = useState(() =>
+    pasosIniciales && pasosIniciales.length > 0
+      ? Math.max(...pasosIniciales.map((paso) => letraAIndice(paso.letra))) + 1
+      : 0,
+  );
   const [pasoCargadoId, setPasoCargadoId] = useState<string | null>(
     pasosIniciales?.[0]?.id ?? null,
   );
@@ -80,10 +104,12 @@ export function EditorEjercicioView({
   const puedeGuardar = titulo.trim() !== "" && pasos.length > 0;
 
   function handleAgregarPaso() {
+    const letra = indiceALetra(proximoIndiceLetra);
     setPasos((prev) => [
       ...prev,
-      { id: crearId(), nombre: null, marcadores, formas },
+      { id: crearId(), nombre: null, letra, marcadores, formas },
     ]);
+    setProximoIndiceLetra((n) => n + 1);
     setReferencia(marcadores);
   }
 
@@ -218,6 +244,7 @@ export function EditorEjercicioView({
       try {
         const pasosPayload = pasos.map((paso) => ({
           nombre: paso.nombre,
+          letra: paso.letra,
           marcadores: paso.marcadores,
           formas: paso.formas,
         }));
@@ -386,7 +413,7 @@ export function EditorEjercicioView({
                           {indice + 1}
                         </span>
                         <span className="text-sm text-neutral-900">
-                          {paso.nombre || `Paso ${indice + 1}`}
+                          {paso.nombre || `Paso ${paso.letra}`}
                         </span>
                       </button>
                     )}

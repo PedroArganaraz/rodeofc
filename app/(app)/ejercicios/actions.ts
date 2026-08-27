@@ -7,6 +7,7 @@ import { esForma, type ElementoCancha, type Forma, type Marcador } from "@/compo
 
 export type PasoInput = {
   nombre: string | null;
+  letra: string;
   marcadores: Marcador[];
   formas: Forma[];
 };
@@ -37,6 +38,7 @@ function armarPasosPayload(ejercicioId: string, pasos: PasoInput[]) {
       ejercicio_id: ejercicioId,
       orden: indice + 1,
       nombre: paso.nombre,
+      letra: paso.letra,
       posiciones: [...paso.marcadores, ...paso.formas] as unknown as Json,
     }),
   );
@@ -127,7 +129,7 @@ export async function obtenerPasosEjercicio(ejercicioId: string) {
 
   const { data, error } = await supabase
     .from("pasos-ejercicio")
-    .select("id, nombre, posiciones")
+    .select("id, nombre, letra, posiciones")
     .eq("ejercicio_id", ejercicioId)
     .order("orden");
 
@@ -138,6 +140,7 @@ export async function obtenerPasosEjercicio(ejercicioId: string) {
     return {
       id: paso.id,
       nombre: paso.nombre,
+      letra: paso.letra,
       marcadores: elementos.filter((el) => !esForma(el)) as Marcador[],
       formas: elementos.filter(esForma),
     };

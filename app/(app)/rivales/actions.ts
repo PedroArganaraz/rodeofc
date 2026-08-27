@@ -60,6 +60,7 @@ export async function updateRival(id: string, input: RivalInput) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/rivales");
+  revalidatePath("/rivales/[id]", "page");
 }
 
 export async function deleteRival(id: string) {
@@ -69,4 +70,5 @@ export async function deleteRival(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/rivales");
+  revalidatePath("/rivales/[id]", "page");
 }

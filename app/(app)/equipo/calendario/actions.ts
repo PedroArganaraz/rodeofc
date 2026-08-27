@@ -65,6 +65,7 @@ export async function createPartido(input: PartidoInput) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/equipo/calendario");
+  revalidatePath("/rivales/[id]", "page");
 }
 
 export async function updatePartido(id: string, input: PartidoInput) {
@@ -82,6 +83,7 @@ export async function updatePartido(id: string, input: PartidoInput) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/equipo/calendario");
+  revalidatePath("/rivales/[id]", "page");
 }
 
 export async function deletePartido(id: string) {
@@ -91,4 +93,5 @@ export async function deletePartido(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/equipo/calendario");
+  revalidatePath("/rivales/[id]", "page");
 }

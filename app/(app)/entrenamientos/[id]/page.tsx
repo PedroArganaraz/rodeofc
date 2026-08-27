@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { EditorEntrenamientoView } from "@/components/entrenamientos/editor-entrenamiento-view";
 
+export const dynamic = "force-dynamic";
+
 export default async function EntrenamientoDetallePage({
   params,
 }: {

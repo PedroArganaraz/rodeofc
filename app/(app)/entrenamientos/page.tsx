@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { EntrenamientosGrid } from "./entrenamientos-grid";
 import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/elementos";
 
+export const dynamic = "force-dynamic";
+
 export default async function EntrenamientosPage() {
   const supabase = await createClient();
   const {

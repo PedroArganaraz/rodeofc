@@ -55,6 +55,7 @@ export async function createJugadora(input: JugadoraInput) {
   if (error) throwJugadoraError(error, input.dorsal);
 
   revalidatePath("/equipo/jugadoras");
+  revalidatePath("/equipo/formacion");
 }
 
 export async function updateJugadora(id: string, input: JugadoraInput) {
@@ -71,6 +72,7 @@ export async function updateJugadora(id: string, input: JugadoraInput) {
   if (error) throwJugadoraError(error, input.dorsal);
 
   revalidatePath("/equipo/jugadoras");
+  revalidatePath("/equipo/formacion");
 }
 
 export async function deleteJugadora(id: string) {
@@ -80,4 +82,5 @@ export async function deleteJugadora(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/equipo/jugadoras");
+  revalidatePath("/equipo/formacion");
 }

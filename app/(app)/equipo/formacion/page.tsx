@@ -5,6 +5,8 @@ import { asegurarFormacionInicial } from "./actions";
 import type { Marcador } from "@/components/cancha/cancha-tactica";
 import type { Tables } from "@/types/database.types";
 
+export const dynamic = "force-dynamic";
+
 export default async function FormacionPage() {
   const supabase = await createClient();
   const {

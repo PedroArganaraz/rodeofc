@@ -3,6 +3,8 @@ import { createClient } from "@/utils/supabase/server";
 import { RivalDetalleView } from "./rival-detalle-view";
 import type { Tables } from "@/types/database.types";
 
+export const dynamic = "force-dynamic";
+
 export default async function RivalDetallePage({
   params,
 }: {

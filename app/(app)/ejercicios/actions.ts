@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import type { Json, TablesInsert } from "@/types/database.types";
 import { esForma, type ElementoCancha, type Forma, type Marcador } from "@/components/cancha/elementos";
@@ -71,6 +72,8 @@ export async function crearEjercicio(
 
   if (pasosError) throw new Error(pasosError.message);
 
+  revalidatePath(`/ejercicios/${categoria}`);
+
   return ejercicio.id;
 }
 
@@ -100,6 +103,9 @@ export async function actualizarEjercicio(
     .insert(armarPasosPayload(ejercicioId, pasos));
 
   if (pasosError) throw new Error(pasosError.message);
+
+  revalidatePath("/ejercicios/[categoria]", "page");
+  revalidatePath("/ejercicios/[categoria]/[id]", "page");
 }
 
 export async function eliminarEjercicio(ejercicioId: string) {
@@ -111,6 +117,9 @@ export async function eliminarEjercicio(ejercicioId: string) {
     .eq("id", ejercicioId);
 
   if (error) throw new Error(error.message);
+
+  revalidatePath("/ejercicios/[categoria]", "page");
+  revalidatePath("/ejercicios/[categoria]/[id]", "page");
 }
 
 export async function obtenerPasosEjercicio(ejercicioId: string) {

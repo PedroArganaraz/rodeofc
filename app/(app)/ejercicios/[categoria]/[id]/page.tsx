@@ -4,6 +4,8 @@ import { CATEGORIAS, type CategoriaEjercicio } from "../../categorias";
 import { obtenerPasosEjercicio } from "../../actions";
 import { EditorEjercicioView } from "@/components/ejercicios/editor-ejercicio-view";
 
+export const dynamic = "force-dynamic";
+
 export default async function EjercicioDetallePage({
   params,
 }: {

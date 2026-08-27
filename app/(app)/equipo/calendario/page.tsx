@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { CalendarioView } from "./calendario-view";
 
+export const dynamic = "force-dynamic";
+
 export default async function CalendarioPage() {
   const supabase = await createClient();
   const {

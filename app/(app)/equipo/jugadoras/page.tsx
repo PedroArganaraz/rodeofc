@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { ordenarPorPosicion } from "@/lib/orden-jugadoras";
 import { JugadorasList } from "./jugadoras-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function JugadorasPage() {
   const supabase = await createClient();
   const {

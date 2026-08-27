@@ -6,6 +6,8 @@ import { CATEGORIAS, type CategoriaEjercicio } from "../categorias";
 import { EjerciciosGrid } from "./ejercicios-grid";
 import { esForma, type ElementoCancha, type Marcador } from "@/components/cancha/elementos";
 
+export const dynamic = "force-dynamic";
+
 export default async function EjerciciosCategoriaPage({
   params,
 }: {

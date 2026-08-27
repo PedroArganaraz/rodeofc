@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import type { TablesInsert } from "@/types/database.types";
 import {
@@ -74,6 +75,8 @@ export async function crearEntrenamiento(
 
   if (ejerciciosError) throw new Error(ejerciciosError.message);
 
+  revalidatePath("/entrenamientos");
+
   return entrenamiento.id;
 }
 
@@ -103,6 +106,9 @@ export async function actualizarEntrenamiento(
     .insert(armarEjerciciosPayload(entrenamientoId, ejercicios));
 
   if (ejerciciosError) throw new Error(ejerciciosError.message);
+
+  revalidatePath("/entrenamientos");
+  revalidatePath("/entrenamientos/[id]", "page");
 }
 
 export async function eliminarEntrenamiento(entrenamientoId: string) {
@@ -114,6 +120,9 @@ export async function eliminarEntrenamiento(entrenamientoId: string) {
     .eq("id", entrenamientoId);
 
   if (error) throw new Error(error.message);
+
+  revalidatePath("/entrenamientos");
+  revalidatePath("/entrenamientos/[id]", "page");
 }
 
 export async function obtenerEjerciciosConPasos(entrenamientoId: string) {

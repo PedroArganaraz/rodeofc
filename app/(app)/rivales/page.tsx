@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { RivalesList } from "./rivales-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function RivalesPage() {
   const supabase = await createClient();
   const {

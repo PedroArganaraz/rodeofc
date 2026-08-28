@@ -71,86 +71,49 @@ export async function asegurarFormacionInicial(equipoId: string) {
   return formacionId;
 }
 
-export async function moverJugadora(
+export async function guardarFormacion(
   formacionId: string,
-  jugadoraId: string,
-  x: number,
-  y: number,
+  slots: { jugadoraId: string; x: number; y: number }[],
 ) {
   const supabase = await createClient();
 
-  const { error: updateError } = await supabase
+  const { error: deleteError } = await supabase
     .from("formaciones-jugadoras")
-    .update({ posicion_x: x, posicion_y: y, titular: true })
+    .delete()
     .eq("formacion_id", formacionId)
-    .eq("jugadora_id", jugadoraId);
-  if (updateError) throw new Error(updateError.message);
+    .eq("titular", true);
+  if (deleteError) throw new Error(deleteError.message);
+
+  const filas: TablesInsert<"formaciones-jugadoras">[] = slots.map((slot) => ({
+    formacion_id: formacionId,
+    jugadora_id: slot.jugadoraId,
+    posicion_x: slot.x,
+    posicion_y: slot.y,
+    titular: true,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("formaciones-jugadoras")
+    .insert(filas);
+  if (insertError) throw new Error(insertError.message);
+
+  const posicionesGuardadas = slots
+    .map((slot) => `${slot.x},${slot.y}`)
+    .sort();
+  const posicionesOriginales = POSICIONES_INICIALES.map(
+    (posicion) => `${posicion.x},${posicion.y}`,
+  ).sort();
+  const coincideConElOriginal =
+    posicionesGuardadas.length === posicionesOriginales.length &&
+    posicionesGuardadas.every((valor, i) => valor === posicionesOriginales[i]);
 
   const { error: esquemaError } = await supabase
     .from("formaciones")
-    .update({ esquema: "personalizado" })
+    .update({
+      esquema: coincideConElOriginal ? ESQUEMA_INICIAL : "personalizado",
+    })
     .eq("id", formacionId);
   if (esquemaError) throw new Error(esquemaError.message);
-
-  revalidatePath("/equipo/formacion");
-}
-
-export async function reemplazarJugadora(
-  formacionId: string,
-  titularId: string,
-  suplenteId: string,
-) {
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from("formaciones-jugadoras")
-    .update({ jugadora_id: suplenteId })
-    .eq("formacion_id", formacionId)
-    .eq("jugadora_id", titularId);
-  if (error) throw new Error(error.message);
-
-  const { error: esquemaError } = await supabase
-    .from("formaciones")
-    .update({ esquema: "personalizado" })
-    .eq("id", formacionId);
-  if (esquemaError) throw new Error(esquemaError.message);
-
-  revalidatePath("/equipo/formacion");
-}
-
-export async function intercambiarPosiciones(
-  formacionId: string,
-  jugadoraIdA: string,
-  jugadoraIdB: string,
-) {
-  const supabase = await createClient();
-
-  const { data: filas, error } = await supabase
-    .from("formaciones-jugadoras")
-    .select("jugadora_id, posicion_x, posicion_y")
-    .eq("formacion_id", formacionId)
-    .in("jugadora_id", [jugadoraIdA, jugadoraIdB]);
-  if (error) throw new Error(error.message);
-
-  const filaA = filas?.find((fila) => fila.jugadora_id === jugadoraIdA);
-  const filaB = filas?.find((fila) => fila.jugadora_id === jugadoraIdB);
-  if (!filaA || !filaB) {
-    throw new Error("No se encontraron las posiciones a intercambiar");
-  }
-
-  const { error: errorA } = await supabase
-    .from("formaciones-jugadoras")
-    .update({ posicion_x: filaB.posicion_x, posicion_y: filaB.posicion_y })
-    .eq("formacion_id", formacionId)
-    .eq("jugadora_id", jugadoraIdA);
-  if (errorA) throw new Error(errorA.message);
-
-  const { error: errorB } = await supabase
-    .from("formaciones-jugadoras")
-    .update({ posicion_x: filaA.posicion_x, posicion_y: filaA.posicion_y })
-    .eq("formacion_id", formacionId)
-    .eq("jugadora_id", jugadoraIdB);
-  if (errorB) throw new Error(errorB.message);
 
   revalidatePath("/equipo/formacion");
 }

@@ -1,96 +1,157 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CanchaTactica, type Marcador } from "@/components/cancha/cancha-tactica";
-import {
-  intercambiarPosiciones,
-  moverJugadora,
-  reemplazarJugadora,
-} from "./actions";
+import { ordenarPorPosicion } from "@/lib/orden-jugadoras";
+import { guardarFormacion } from "./actions";
 import type { Tables } from "@/types/database.types";
+
+type Slot = {
+  jugadoraId: string;
+  x: number;
+  y: number;
+};
+
+type Seleccion = { tipo: "titular" | "suplente"; id: string };
 
 export function FormacionView({
   formacionId,
-  marcadoresIniciales,
-  suplentes,
+  slotsIniciales,
+  jugadoras,
 }: {
   formacionId: string | null;
-  marcadoresIniciales: Marcador[];
-  suplentes: Tables<"jugadoras">[];
+  slotsIniciales: Slot[];
+  jugadoras: Tables<"jugadoras">[];
 }) {
-  const [overrides, setOverrides] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
+  const [slots, setSlots] = useState<Slot[]>(slotsIniciales);
   const [mostrarNombres, setMostrarNombres] = useState(true);
-  const [seleccionadoId, setSeleccionadoId] = useState<string | null>(null);
+  const [seleccion, setSeleccion] = useState<Seleccion | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [guardando, startTransition] = useTransition();
   const router = useRouter();
 
-  const marcadores: Marcador[] = marcadoresIniciales.map((marcador) => ({
-    ...marcador,
-    ...(overrides[marcador.id] ?? {}),
-    etiqueta: mostrarNombres ? marcador.etiqueta : undefined,
-  }));
+  const jugadorasPorId = useMemo(
+    () => new Map(jugadoras.map((jugadora) => [jugadora.id, jugadora])),
+    [jugadoras],
+  );
+
+  const marcadores: Marcador[] = slots.map((slot) => {
+    const jugadora = jugadorasPorId.get(slot.jugadoraId);
+    return {
+      id: slot.jugadoraId,
+      x: slot.x,
+      y: slot.y,
+      numero: jugadora?.dorsal?.toString() ?? "-",
+      color: "propio",
+      etiqueta: mostrarNombres ? jugadora?.apellido : undefined,
+    };
+  });
+
+  const suplentes = ordenarPorPosicion(
+    jugadoras.filter(
+      (jugadora) => !slots.some((slot) => slot.jugadoraId === jugadora.id),
+    ),
+  );
+
+  const huboCambios = JSON.stringify(slots) !== JSON.stringify(slotsIniciales);
 
   function handleMoverMarcador(id: string, x: number, y: number) {
+    setSlots((prev) =>
+      prev.map((slot) => (slot.jugadoraId === id ? { ...slot, x, y } : slot)),
+    );
+  }
+
+  function handleClickMarcador(id: string) {
+    if (!seleccion) {
+      setSeleccion({ tipo: "titular", id });
+      return;
+    }
+
+    if (seleccion.tipo === "titular") {
+      if (seleccion.id === id) {
+        setSeleccion(null);
+        return;
+      }
+      setSlots((prev) => {
+        const copia = prev.map((slot) => ({ ...slot }));
+        const a = copia.find((slot) => slot.jugadoraId === seleccion.id);
+        const b = copia.find((slot) => slot.jugadoraId === id);
+        if (a && b) {
+          const x = a.x;
+          const y = a.y;
+          a.x = b.x;
+          a.y = b.y;
+          b.x = x;
+          b.y = y;
+        }
+        return copia;
+      });
+      setSeleccion(null);
+      return;
+    }
+
+    const suplenteId = seleccion.id;
+    setSlots((prev) =>
+      prev.map((slot) =>
+        slot.jugadoraId === id ? { ...slot, jugadoraId: suplenteId } : slot,
+      ),
+    );
+    setSeleccion(null);
+  }
+
+  function handleClickSuplente(id: string) {
+    if (!seleccion) {
+      setSeleccion({ tipo: "suplente", id });
+      return;
+    }
+
+    if (seleccion.tipo === "suplente") {
+      setSeleccion(seleccion.id === id ? null : { tipo: "suplente", id });
+      return;
+    }
+
+    const titularId = seleccion.id;
+    setSlots((prev) =>
+      prev.map((slot) =>
+        slot.jugadoraId === titularId ? { ...slot, jugadoraId: id } : slot,
+      ),
+    );
+    setSeleccion(null);
+  }
+
+  function handleGuardar() {
     if (!formacionId) return;
-
-    setOverrides((prev) => ({ ...prev, [id]: { x, y } }));
-
-    moverJugadora(formacionId, id, x, y).catch((err) => {
-      setError(err instanceof Error ? err.message : "Ocurrió un error");
+    setError(null);
+    startTransition(async () => {
+      try {
+        await guardarFormacion(formacionId, slots);
+        router.refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Ocurrió un error");
+      }
     });
-  }
-
-  async function handleClickMarcador(id: string) {
-    if (!seleccionadoId) {
-      setSeleccionadoId(id);
-      return;
-    }
-
-    if (seleccionadoId === id) {
-      setSeleccionadoId(null);
-      return;
-    }
-
-    if (!formacionId) {
-      setSeleccionadoId(null);
-      return;
-    }
-
-    const titularAId = seleccionadoId;
-    setSeleccionadoId(null);
-    setError(null);
-
-    try {
-      await intercambiarPosiciones(formacionId, titularAId, id);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocurrió un error");
-    }
-  }
-
-  async function handleClickSuplente(suplenteId: string) {
-    if (!formacionId || !seleccionadoId) return;
-
-    const titularId = seleccionadoId;
-    setSeleccionadoId(null);
-    setError(null);
-
-    try {
-      await reemplazarJugadora(formacionId, titularId, suplenteId);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Ocurrió un error");
-    }
   }
 
   return (
     <div
-      onClick={() => setSeleccionadoId(null)}
+      onClick={() => setSeleccion(null)}
       className="w-full flex-1 p-6"
     >
+      <div className="mb-4 flex justify-end">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleGuardar();
+          }}
+          disabled={!huboCambios || guardando || !formacionId}
+          className="rounded-xl bg-brand-navy px-4 py-2 text-sm font-medium text-white hover:bg-brand-navy-dark disabled:opacity-40"
+        >
+          {guardando ? "Guardando..." : "Guardar cambios"}
+        </button>
+      </div>
+
       {error ? (
         <p className="mb-4 rounded-xl bg-red-500/10 px-3 py-2 text-sm text-red-500">
           {error}
@@ -124,7 +185,9 @@ export function FormacionView({
               editable
               onMoverMarcador={handleMoverMarcador}
               onClickMarcador={handleClickMarcador}
-              seleccionadoId={seleccionadoId ?? undefined}
+              seleccionadoId={
+                seleccion?.tipo === "titular" ? seleccion.id : undefined
+              }
             />
           </div>
           <div className="hidden lg:block">
@@ -134,7 +197,9 @@ export function FormacionView({
               editable
               onMoverMarcador={handleMoverMarcador}
               onClickMarcador={handleClickMarcador}
-              seleccionadoId={seleccionadoId ?? undefined}
+              seleccionadoId={
+                seleccion?.tipo === "titular" ? seleccion.id : undefined
+              }
             />
           </div>
         </div>
@@ -148,28 +213,32 @@ export function FormacionView({
               <p className="text-sm text-neutral-500">No hay suplentes.</p>
             ) : (
               <div className="flex flex-wrap justify-center gap-4 lg:flex-col lg:items-start lg:gap-2">
-                {suplentes.map((jugadora) => (
-                  <button
-                    key={jugadora.id}
-                    type="button"
-                    disabled={!seleccionadoId}
-                    onClick={() => handleClickSuplente(jugadora.id)}
-                    className={`flex flex-col items-center gap-1 rounded-xl p-1 lg:flex-row lg:gap-2 ${
-                      seleccionadoId
-                        ? "cursor-pointer hover:bg-stone-100"
-                        : "cursor-default"
-                    }`}
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white">
-                      {jugadora.dorsal ?? "-"}
-                    </span>
-                    {mostrarNombres ? (
-                      <span className="text-xs font-medium text-neutral-900">
-                        {jugadora.apellido}
+                {suplentes.map((jugadora) => {
+                  const seleccionado =
+                    seleccion?.tipo === "suplente" && seleccion.id === jugadora.id;
+                  return (
+                    <button
+                      key={jugadora.id}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleClickSuplente(jugadora.id);
+                      }}
+                      className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl p-1 hover:bg-stone-100 lg:flex-row lg:gap-2 ${
+                        seleccionado ? "ring-2 ring-brand-navy" : ""
+                      }`}
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500 font-mono text-sm font-medium text-white">
+                        {jugadora.dorsal ?? "-"}
                       </span>
-                    ) : null}
-                  </button>
-                ))}
+                      {mostrarNombres ? (
+                        <span className="text-xs font-medium text-neutral-900">
+                          {jugadora.apellido}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

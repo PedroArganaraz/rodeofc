@@ -2,8 +2,6 @@ import { createClient } from "@/utils/supabase/server";
 import { ordenarPorPosicion } from "@/lib/orden-jugadoras";
 import { FormacionView } from "./formacion-view";
 import { asegurarFormacionInicial } from "./actions";
-import type { Marcador } from "@/components/cancha/cancha-tactica";
-import type { Tables } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +32,7 @@ export default async function FormacionPage() {
     supabase.from("jugadoras").select("*").eq("equipo_id", equipoId),
   ]);
 
-  let marcadores: Marcador[] = [];
-  let suplentes: Tables<"jugadoras">[] = ordenarPorPosicion(jugadoras ?? []);
+  let slotsIniciales: { jugadoraId: string; x: number; y: number }[] = [];
 
   if (formacionId) {
     const { data: filas } = await supabase
@@ -43,36 +40,23 @@ export default async function FormacionPage() {
       .select("*")
       .eq("formacion_id", formacionId);
 
-    const jugadorasById = new Map((jugadoras ?? []).map((j) => [j.id, j]));
-    const ocupadas = new Set((filas ?? []).map((fila) => fila.jugadora_id));
-
-    marcadores = (filas ?? [])
+    slotsIniciales = (filas ?? [])
       .filter(
         (fila) =>
           fila.titular && fila.posicion_x !== null && fila.posicion_y !== null,
       )
-      .map((fila) => {
-        const jugadora = jugadorasById.get(fila.jugadora_id);
-        return {
-          id: fila.jugadora_id,
-          x: fila.posicion_x as number,
-          y: fila.posicion_y as number,
-          numero: jugadora?.dorsal?.toString() ?? "-",
-          color: "propio" as const,
-          etiqueta: jugadora?.apellido,
-        };
-      });
-
-    suplentes = ordenarPorPosicion(
-      (jugadoras ?? []).filter((j) => !ocupadas.has(j.id)),
-    );
+      .map((fila) => ({
+        jugadoraId: fila.jugadora_id,
+        x: fila.posicion_x as number,
+        y: fila.posicion_y as number,
+      }));
   }
 
   return (
     <FormacionView
       formacionId={formacionId}
-      marcadoresIniciales={marcadores}
-      suplentes={suplentes}
+      slotsIniciales={slotsIniciales}
+      jugadoras={ordenarPorPosicion(jugadoras ?? [])}
     />
   );
 }

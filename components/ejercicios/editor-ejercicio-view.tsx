@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
-  GripVertical,
   Pencil,
   Plus,
   Trash2,
@@ -96,10 +95,6 @@ export function EditorEjercicioView({
   const [mostrarConfirmEliminar, setMostrarConfirmEliminar] = useState(false);
   const [mostrarReproducir, setMostrarReproducir] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [dragId, setDragId] = useState<string | null>(null);
-  const filaRefs = useRef<Record<string, HTMLLIElement | null>>({});
-  const dragElRef = useRef<HTMLButtonElement | null>(null);
-  const dragPointerIdRef = useRef<number | null>(null);
 
   const puedeGuardar = titulo.trim() !== "" && pasos.length > 0;
 
@@ -148,95 +143,6 @@ export function EditorEjercicioView({
       return copia;
     });
   }
-
-  function handlePointerDownGrip(
-    event: React.PointerEvent<HTMLButtonElement>,
-    id: string,
-  ) {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragElRef.current = event.currentTarget;
-    dragPointerIdRef.current = event.pointerId;
-    setDragId(id);
-  }
-
-  useEffect(() => {
-    if (!dragId) return;
-    const el = dragElRef.current;
-    if (!el) return;
-
-    let finalizado = false;
-
-    function mover(clientY: number) {
-      setPasos((prev) => {
-        const indiceActual = prev.findIndex((paso) => paso.id === dragId);
-        if (indiceActual === -1) return prev;
-
-        let indiceDestino = indiceActual;
-        for (let i = 0; i < prev.length; i++) {
-          const el = filaRefs.current[prev[i].id];
-          if (!el) continue;
-          const rect = el.getBoundingClientRect();
-          if (clientY >= rect.top && clientY <= rect.bottom) {
-            indiceDestino = i;
-            break;
-          }
-        }
-
-        if (indiceDestino === indiceActual) return prev;
-        const copia = [...prev];
-        const [item] = copia.splice(indiceActual, 1);
-        copia.splice(indiceDestino, 0, item);
-        return copia;
-      });
-    }
-
-    function finalizar() {
-      if (finalizado) return;
-      finalizado = true;
-      const pointerId = dragPointerIdRef.current;
-      if (pointerId !== null && el!.hasPointerCapture(pointerId)) {
-        el!.releasePointerCapture(pointerId);
-      }
-      setDragId(null);
-    }
-
-    function onPointerMoveNativo(event: PointerEvent) {
-      event.preventDefault();
-      mover(event.clientY);
-    }
-
-    function onPointerUpNativo(event: PointerEvent) {
-      event.preventDefault();
-      finalizar();
-    }
-
-    function onTouchMoveNativo(event: TouchEvent) {
-      event.preventDefault();
-      const touch = event.touches[0];
-      if (touch) mover(touch.clientY);
-    }
-
-    function onTouchEndNativo(event: TouchEvent) {
-      event.preventDefault();
-      finalizar();
-    }
-
-    el.addEventListener("pointermove", onPointerMoveNativo, { passive: false });
-    el.addEventListener("pointerup", onPointerUpNativo, { passive: false });
-    el.addEventListener("pointercancel", onPointerUpNativo, { passive: false });
-    el.addEventListener("touchmove", onTouchMoveNativo, { passive: false });
-    el.addEventListener("touchend", onTouchEndNativo, { passive: false });
-    el.addEventListener("touchcancel", onTouchEndNativo, { passive: false });
-
-    return () => {
-      el.removeEventListener("pointermove", onPointerMoveNativo);
-      el.removeEventListener("pointerup", onPointerUpNativo);
-      el.removeEventListener("pointercancel", onPointerUpNativo);
-      el.removeEventListener("touchmove", onTouchMoveNativo);
-      el.removeEventListener("touchend", onTouchEndNativo);
-      el.removeEventListener("touchcancel", onTouchEndNativo);
-    };
-  }, [dragId]);
 
   function handleGuardar() {
     setError(null);
@@ -364,22 +270,11 @@ export function EditorEjercicioView({
               return (
                 <li
                   key={paso.id}
-                  ref={(el) => {
-                    filaRefs.current[paso.id] = el;
-                  }}
                   className={`rounded-xl border bg-white px-4 py-3 ${
                     cargado ? "border-brand-navy" : "border-stone-300"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <button
-                      type="button"
-                      onPointerDown={(event) => handlePointerDownGrip(event, paso.id)}
-                      aria-label={`Reordenar paso ${indice + 1}`}
-                      className="touch-none hidden shrink-0 rounded-full p-2 text-neutral-400 hover:bg-stone-300 hover:text-neutral-900 lg:flex"
-                    >
-                      <GripVertical className="h-4 w-4" />
-                    </button>
                     {editando ? (
                       <div className="flex flex-1 items-center gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-300 font-mono text-sm font-medium text-neutral-900">
@@ -418,26 +313,24 @@ export function EditorEjercicioView({
                       </button>
                     )}
                     <div className="flex shrink-0 gap-1">
-                      <div className="flex gap-1 lg:hidden">
-                        <button
-                          type="button"
-                          onClick={() => handleMoverPaso(indice, -1)}
-                          disabled={indice === 0}
-                          aria-label={`Mover paso ${indice + 1} arriba`}
-                          className="rounded-full p-2 text-neutral-500 hover:bg-stone-300 hover:text-neutral-900 disabled:opacity-40"
-                        >
-                          <ChevronUp className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoverPaso(indice, 1)}
-                          disabled={indice === pasos.length - 1}
-                          aria-label={`Mover paso ${indice + 1} abajo`}
-                          className="rounded-full p-2 text-neutral-500 hover:bg-stone-300 hover:text-neutral-900 disabled:opacity-40"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleMoverPaso(indice, -1)}
+                        disabled={indice === 0}
+                        aria-label={`Mover paso ${indice + 1} arriba`}
+                        className="rounded-full p-2 text-neutral-500 hover:bg-stone-300 hover:text-neutral-900 disabled:opacity-40"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoverPaso(indice, 1)}
+                        disabled={indice === pasos.length - 1}
+                        aria-label={`Mover paso ${indice + 1} abajo`}
+                        className="rounded-full p-2 text-neutral-500 hover:bg-stone-300 hover:text-neutral-900 disabled:opacity-40"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleEmpezarEdicion(paso)}
